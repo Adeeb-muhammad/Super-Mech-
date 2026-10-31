@@ -13,10 +13,6 @@ on:
 permissions:
   contents: read
 
-concurrency:
-  group: godot-ci-\${{ github.ref }}
-  cancel-in-progress: true
-
 jobs:
   build-and-test:
     name: Import, compile, test, and launch headlessly
@@ -51,11 +47,8 @@ jobs:
       - name: Restore game dependencies
         run: dotnet restore "super mech.csproj"
 
-      - name: Import Godot project resources
+      - name: Import Godot project resources and compile C#
         run: godot --headless --editor --path . --import --quit
-
-      - name: Generate and build Godot C# solution
-        run: godot --headless --editor --path . --build-solutions --quit
 
       - name: Build game project
         run: dotnet build "super mech.csproj" --configuration Debug --no-restore
