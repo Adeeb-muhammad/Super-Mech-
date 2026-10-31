@@ -1,0 +1,67 @@
+name: Godot and .NET CI
+
+on:
+  push:
+    branches:
+      - main
+      - "chore/**"
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: godot-ci-\${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    name: Import, compile, test, and launch headlessly
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      DOTNET_CLI_TELEMETRY_OPTOUT: "true"
+      DOTNET_NOLOGO: "true"
+      DOTNET_SKIP_FIRST_TIME_EXPERIENCE: "true"
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install .NET 8 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Install Godot 4.6 .NET
+        uses: chickensoft-games/setup-godot@v2
+        with:
+          version: 4.6.0
+          use-dotnet: true
+          include-templates: false
+
+      - name: Verify toolchain
+        run: |
+          dotnet --info
+          godot --version
+
+      - name: Restore game dependencies
+        run: dotnet restore "super mech.csproj"
+
+      - name: Import Godot project resources
+        run: godot --headless --editor --path . --import --quit
+
+      - name: Generate and build Godot C# solution
+        run: godot --headless --editor --path . --build-solutions --quit
+
+      - name: Build game project
+        run: dotnet build "super mech.csproj" --configuration Debug --no-restore
+
+      - name: Run unit tests
+        run: dotnet test "Tests/Tests.csproj" --configuration Debug --verbosity normal
+
+      - name: Launch main scene headlessly
+        run: godot --headless --path . --quit-after 5
