@@ -25,3 +25,11 @@ Build-budget cost and in-game energy capacity are separate values and must not b
 ## Testing boundary
 
 The xUnit project links pure workshop-domain, JSON codec, and file-store sources without loading Godot. The remote Godot CI workflow validates resource import, C# compilation, and headless startup of the configured workshop scene. Interactive UI behavior and visual layout still need hands-on QA and dedicated UI automation.
+
+
+## Responsive layout
+
+- The workshop uses a three-panel `HBoxContainer` at wider viewport widths.
+- Below `WorkshopLayoutRules.CompactBreakpoint` (1024 pixels), its panels are re-parented into a vertically stacked `VBoxContainer` inside a `ScrollContainer`.
+- Side-panel minimum widths are removed in compact mode, preview height is reduced, and horizontal margins shrink for very narrow windows.
+- The pure breakpoint/margin policy is covered by xUnit. Rendered visual QA at actual device aspect ratios is still required.

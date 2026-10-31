@@ -199,4 +199,21 @@ public sealed class WorkshopLoadoutCodecTests
         }
     }
 
+
+    [Fact]
+    public void LayoutRules_UseCompactLayoutBelowBreakpoint()
+    {
+        Assert.True(WorkshopLayoutRules.UseCompactLayout(1023.9f));
+        Assert.False(WorkshopLayoutRules.UseCompactLayout(1024.0f));
+        Assert.False(WorkshopLayoutRules.UseCompactLayout(1280.0f));
+    }
+
+    [Fact]
+    public void LayoutRules_UseSmallerMarginsOnNarrowScreens()
+    {
+        Assert.Equal(10, WorkshopLayoutRules.HorizontalMargin(390.0f));
+        Assert.Equal(16, WorkshopLayoutRules.HorizontalMargin(600.0f));
+        Assert.Equal(16, WorkshopLayoutRules.HorizontalMargin(900.0f));
+    }
+
 }
