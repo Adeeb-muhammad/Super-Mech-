@@ -133,8 +133,8 @@ public sealed class WorkshopLoadoutCodecTests
         WorkshopLoadoutData data = WorkshopLoadoutCodec.CreateDefault();
         var loadout = new Dictionary<MechPartSlot, WorkshopPartDefinition>
         {
-            [MechPartSlot.Frame] = WorkshopCatalog.FindById(data.EquippedPartIds["Frame"]),
-            [MechPartSlot.Mobility] = WorkshopCatalog.FindById(data.EquippedPartIds["Mobility"])
+            [MechPartSlot.Frame] = WorkshopCatalog.FindById(data.EquippedPartIds["Frame"])!,
+            [MechPartSlot.Mobility] = WorkshopCatalog.FindById(data.EquippedPartIds["Mobility"])!
         };
 
         Assert.True(MechBuildRules.TryValidateWorkshopLoadout(loadout, 100, 50, out WorkshopBuildStats stats, out string error), error);

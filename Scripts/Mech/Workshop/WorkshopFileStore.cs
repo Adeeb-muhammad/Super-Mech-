@@ -59,7 +59,7 @@ public static class WorkshopFileStore
 
         try
         {
-            string directory = Path.GetDirectoryName(Path.GetFullPath(absolutePath));
+            string? directory = Path.GetDirectoryName(Path.GetFullPath(absolutePath));
             if (!string.IsNullOrWhiteSpace(directory))
                 Directory.CreateDirectory(directory);
 
