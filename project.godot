@@ -6,7 +6,7 @@ config_version=5
 [application]
 
 config/name="Super Mech"
-run/main_scene="uid://evucg5r672e2"
+run/main_scene="res://Scenes/Workshop/workshop.tscn"
 config/features=PackedStringArray("4.6", "C#", "GL Compatibility")
 config/icon="res://icon.svg"
 
