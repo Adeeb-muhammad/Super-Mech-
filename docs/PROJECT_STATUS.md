@@ -25,7 +25,7 @@
 
 ## Implemented local workshop
 
-- Added a default workshop scene with a three-panel Control-based interface.
+- Added a default workshop scene with a wide three-panel Control-based interface and a narrow stacked/scrollable layout that switches below a 1024px viewport width.
 - Added a project-authored starter catalogue with four slots: Frame, Mobility, Core, and Utility.
 - Frame and Mobility are required; Core and Utility are optional.
 - Added one item per slot, replacement behavior, optional-slot removal, and a reset-to-starter action.
@@ -50,7 +50,7 @@ This verifies import, desktop compilation, the tested domain and file-persistenc
 
 ## Known limitations and next priorities
 
-1. Complete interactive visual QA at common desktop and mobile aspect ratios; adjust responsive layout where needed.
+1. Complete interactive visual QA at common desktop and mobile aspect ratios; compact layout behavior now has pure breakpoint tests, but the actual rendered arrangement still needs visual inspection.
 2. Add a multi-build save manager with build naming and duplicate/copy actions.
 3. Add an inventory ownership model instead of treating every catalogue entry as immediately available.
 4. Unify the new workshop loadout model with the older \`MechAssembler\` / \`MechPart\` preview path after compatibility tests.
@@ -59,3 +59,10 @@ This verifies import, desktop compilation, the tested domain and file-persistenc
 7. Add automated UI interaction tests for filter selection, equip/replace/remove actions, save, load, and reset.
 
 The repository is an improved, tested prototype, not a finished full game.
+
+
+## Responsive workshop increment
+
+- The workshop now re-parents the catalogue, preview, and details panels into a vertically stacked scroll container below the compact-layout breakpoint.
+- The wide layout keeps the familiar three-panel arrangement; compact mode reduces margins, removes fixed side-panel widths, hides the offline badge on very narrow viewports, and gives the preview a lower minimum height.
+- `WorkshopLayoutRules` contains the breakpoint and margin decisions and is tested independently. Actual visual testing at device aspect ratios remains outstanding.

@@ -12,6 +12,16 @@ public partial class WorkshopScreen : Control
     private const int MaxWeight = 100;
     private const int MaxBuildCost = 50;
 
+    private HBoxContainer _wideBody;
+    private ScrollContainer _compactScroll;
+    private VBoxContainer _compactBody;
+    private PanelContainer _cataloguePanel;
+    private PanelContainer _previewPanel;
+    private PanelContainer _detailsPanel;
+    private MarginContainer _pageMargin;
+    private Label _offlineBadge;
+    private bool _isCompactLayout;
+
     private readonly Dictionary<MechPartSlot, WorkshopPartDefinition> _loadout = new();
     private OptionButton _filter;
     private VBoxContainer _partList;
@@ -36,8 +46,10 @@ public partial class WorkshopScreen : Control
     {
         SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
         BuildInterface();
+        GetViewport().SizeChanged += OnViewportSizeChanged;
         LoadLocalBuild();
         RefreshAll();
+        CallDeferred(nameof(UpdateResponsiveLayout));
     }
 
     private void BuildInterface()
@@ -50,31 +62,55 @@ public partial class WorkshopScreen : Control
         background.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
         AddChild(background);
 
-        var margin = new MarginContainer();
-        margin.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
-        margin.AddThemeConstantOverride("margin_left", 22);
-        margin.AddThemeConstantOverride("margin_right", 22);
-        margin.AddThemeConstantOverride("margin_top", 18);
-        margin.AddThemeConstantOverride("margin_bottom", 18);
-        AddChild(margin);
+        _pageMargin = new MarginContainer();
+        _pageMargin.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
+        _pageMargin.AddThemeConstantOverride("margin_left", 22);
+        _pageMargin.AddThemeConstantOverride("margin_right", 22);
+        _pageMargin.AddThemeConstantOverride("margin_top", 18);
+        _pageMargin.AddThemeConstantOverride("margin_bottom", 18);
+        AddChild(_pageMargin);
 
         var page = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill, SizeFlagsVertical = SizeFlags.ExpandFill };
         page.AddThemeConstantOverride("separation", 14);
-        margin.AddChild(page);
+        _pageMargin.AddChild(page);
 
         BuildHeader(page);
 
-        var body = new HBoxContainer
+        var bodyHost = new Control
         {
             SizeFlagsHorizontal = SizeFlags.ExpandFill,
             SizeFlagsVertical = SizeFlags.ExpandFill
         };
-        body.AddThemeConstantOverride("separation", 14);
-        page.AddChild(body);
+        page.AddChild(bodyHost);
 
-        BuildCataloguePanel(body);
-        BuildPreviewPanel(body);
-        BuildDetailsPanel(body);
+        _wideBody = new HBoxContainer
+        {
+            SizeFlagsHorizontal = SizeFlags.ExpandFill,
+            SizeFlagsVertical = SizeFlags.ExpandFill
+        };
+        _wideBody.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
+        _wideBody.AddThemeConstantOverride("separation", 14);
+        bodyHost.AddChild(_wideBody);
+
+        _compactScroll = new ScrollContainer
+        {
+            SizeFlagsHorizontal = SizeFlags.ExpandFill,
+            SizeFlagsVertical = SizeFlags.ExpandFill,
+            Visible = false
+        };
+        _compactScroll.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
+        bodyHost.AddChild(_compactScroll);
+
+        _compactBody = new VBoxContainer
+        {
+            SizeFlagsHorizontal = SizeFlags.ExpandFill
+        };
+        _compactBody.AddThemeConstantOverride("separation", 12);
+        _compactScroll.AddChild(_compactBody);
+
+        BuildCataloguePanel(_wideBody);
+        BuildPreviewPanel(_wideBody);
+        BuildDetailsPanel(_wideBody);
 
         var footer = new HBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
         footer.AddThemeConstantOverride("separation", 10);
@@ -105,14 +141,15 @@ public partial class WorkshopScreen : Control
         titleBlock.AddChild(NewLabel("SUPER MECH / WORKSHOP", 24, new Color(0.90f, 0.94f, 0.95f), true));
         titleBlock.AddChild(NewLabel("CONFIGURE YOUR FRAME  •  LOCAL PROTOTYPE BUILD", 11, new Color(0.43f, 0.62f, 0.68f)));
 
-        var badge = NewLabel("OFFLINE WORKSHOP", 11, new Color(0.55f, 0.82f, 0.68f), true);
-        badge.HorizontalAlignment = HorizontalAlignment.Right;
-        header.AddChild(badge);
+        _offlineBadge = NewLabel("OFFLINE WORKSHOP", 11, new Color(0.55f, 0.82f, 0.68f), true);
+        _offlineBadge.HorizontalAlignment = HorizontalAlignment.Right;
+        header.AddChild(_offlineBadge);
     }
 
     private void BuildCataloguePanel(HBoxContainer parent)
     {
         var panel = MakePanel();
+        _cataloguePanel = panel;
         panel.CustomMinimumSize = new Vector2(265, 0);
         panel.SizeFlagsVertical = SizeFlags.ExpandFill;
         parent.AddChild(panel);
@@ -143,6 +180,7 @@ public partial class WorkshopScreen : Control
     private void BuildPreviewPanel(HBoxContainer parent)
     {
         var panel = MakePanel();
+        _previewPanel = panel;
         panel.SizeFlagsHorizontal = SizeFlags.ExpandFill;
         panel.SizeFlagsVertical = SizeFlags.ExpandFill;
         parent.AddChild(panel);
@@ -175,6 +213,7 @@ public partial class WorkshopScreen : Control
     private void BuildDetailsPanel(HBoxContainer parent)
     {
         var panel = MakePanel();
+        _detailsPanel = panel;
         panel.CustomMinimumSize = new Vector2(285, 0);
         panel.SizeFlagsVertical = SizeFlags.ExpandFill;
         parent.AddChild(panel);
@@ -218,6 +257,87 @@ public partial class WorkshopScreen : Control
 
         column.AddChild(NewLabel("One component per slot. Frame and mobility are required.", 10,
             new Color(0.48f, 0.58f, 0.62f)));
+    }
+
+    private void OnViewportSizeChanged()
+    {
+        UpdateResponsiveLayout();
+    }
+
+    private void UpdateResponsiveLayout()
+    {
+        float viewportWidth = GetViewportRect().Size.X;
+        bool useCompactLayout = WorkshopLayoutRules.UseCompactLayout(viewportWidth);
+        if (_wideBody == null || _compactBody == null || useCompactLayout == _isCompactLayout)
+            return;
+
+        _isCompactLayout = useCompactLayout;
+
+        if (_isCompactLayout)
+        {
+            MovePanel(_cataloguePanel, _compactBody);
+            MovePanel(_previewPanel, _compactBody);
+            MovePanel(_detailsPanel, _compactBody);
+
+            foreach (PanelContainer panel in new[] { _cataloguePanel, _previewPanel, _detailsPanel })
+            {
+                panel.CustomMinimumSize = Vector2.Zero;
+                panel.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+                panel.SizeFlagsVertical = SizeFlags.ShrinkBegin;
+            }
+
+            _preview.CustomMinimumSize = new Vector2(0, 280);
+            _wideBody.Visible = false;
+            _compactScroll.Visible = true;
+            int compactMargin = WorkshopLayoutRules.HorizontalMargin(viewportWidth);
+            _pageMargin.AddThemeConstantOverride("margin_left", compactMargin);
+            _pageMargin.AddThemeConstantOverride("margin_right", compactMargin);
+            _pageMargin.AddThemeConstantOverride("margin_top", 10);
+            _pageMargin.AddThemeConstantOverride("margin_bottom", 10);
+            _offlineBadge.Visible = viewportWidth >= 600;
+        }
+        else
+        {
+            MovePanel(_cataloguePanel, _wideBody);
+            MovePanel(_previewPanel, _wideBody);
+            MovePanel(_detailsPanel, _wideBody);
+
+            _cataloguePanel.CustomMinimumSize = new Vector2(265, 0);
+            _cataloguePanel.SizeFlagsHorizontal = SizeFlags.Fill;
+            _cataloguePanel.SizeFlagsVertical = SizeFlags.ExpandFill;
+            _previewPanel.CustomMinimumSize = Vector2.Zero;
+            _previewPanel.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+            _previewPanel.SizeFlagsVertical = SizeFlags.ExpandFill;
+            _detailsPanel.CustomMinimumSize = new Vector2(285, 0);
+            _detailsPanel.SizeFlagsHorizontal = SizeFlags.Fill;
+            _detailsPanel.SizeFlagsVertical = SizeFlags.ExpandFill;
+
+            _preview.CustomMinimumSize = new Vector2(360, 340);
+            _wideBody.Visible = true;
+            _compactScroll.Visible = false;
+            _pageMargin.AddThemeConstantOverride("margin_left", 22);
+            _pageMargin.AddThemeConstantOverride("margin_right", 22);
+            _pageMargin.AddThemeConstantOverride("margin_top", 18);
+            _pageMargin.AddThemeConstantOverride("margin_bottom", 18);
+            _offlineBadge.Visible = true;
+        }
+    }
+
+    private static void MovePanel(PanelContainer panel, Container target)
+    {
+        if (panel == null || target == null || panel.GetParent() == target)
+            return;
+
+        if (panel.GetParent() is Container currentParent)
+            currentParent.RemoveChild(panel);
+
+        target.AddChild(panel);
+    }
+
+    public override void _ExitTree()
+    {
+        if (GetViewport() != null)
+            GetViewport().SizeChanged -= OnViewportSizeChanged;
     }
 
     private void LoadLocalBuild()
