@@ -34,7 +34,10 @@
 - No component resource catalog, profile/save system, progression flow, reward loop, or end-to-end integration scene was found in the inspected tree.
 - Combat scripts are separate from the current main scene. Their exported NodePaths and turn flow still need a dedicated integration scene and editor validation.
 - The provenance and redistribution rights of files under `Sprites/` are not documented sufficiently to conclude that the repository's MIT license covers them.
-- Godot editor launch, asset import, C# compilation, runtime scene checks, and `dotnet test` have not been run in this hosted editing session. Do not treat the new tests as passed until they are executed locally or in CI.
+- A remote GitHub Actions run on the audited branch completed successfully with Godot Engine 4.6.stable.mono.official.89cea1439 and the .NET 8 SDK.
+- The run completed the full asset import, both desktop C# builds (each reported 0 warnings and 0 errors), all 8 xUnit tests, and a headless launch of the configured main scene. The scene initialized the stat autoload successfully.
+- During headless editor import, Godot also logged `EditorSettings not instantiated yet when getting setting "export/android/android_sdk_path"`. It did not fail the job and desktop validation passed; Android export configuration has not been tested.
+- This verifies import, desktop compilation, the current unit-test suite, and a headless main-scene startup. It does not replace interactive visual QA, playtesting, export testing, or verification of scenes that are not currently wired into the main scene.
 
 ## Priority order
 
@@ -50,3 +53,10 @@
 
 - Added a GitHub Actions workflow on the default branch that provisions Godot 4.6 .NET and .NET 8, imports the project, builds the solution, runs the test project, and launches the main scene headlessly. The first run against the default branch is in progress; the development branch is queued for the next push.
 - Removed stale root-node scene property assignments that did not correspond to any exported properties on `PlayerMechController`.
+
+
+## Latest remote CI run
+
+- Run: [Godot and .NET CI](https://github.com/Adeeb-muhammad/Super-Mech-/actions/runs/41225066401)
+- Audited branch commit: `dc4f9151a9d2b82069919018a68b9b7bf50ea3ec`
+- Result: **success** — import passed, C# builds passed (0 warnings / 0 errors), xUnit passed (8/8), and headless main-scene startup passed.
