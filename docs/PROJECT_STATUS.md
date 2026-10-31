@@ -2,49 +2,60 @@
 
 **Last updated:** 2026-10-31  
 **Default branch:** \`main\`  
-**Current development branch:** \`feature/data-driven-workshop\`
+**Validated feature branch:** \`feature/data-driven-workshop\`
 
 ## Repository baseline
 
 - Godot 4.6 .NET project using C# and a .NET 8 desktop target.
-- The main entry scene is \`Scenes/Workshop/workshop.tscn\`.
-- The original \`player_mech.tscn\` mech preview remains available as a separate scene.
+- The default entry scene is \`Scenes/Workshop/workshop.tscn\`.
+- The older \`player_mech.tscn\` preview scene remains available separately.
 - Scripts are grouped into \`Combat\`, \`Core\`, \`Mech\`, and \`Mech/Workshop\`.
 - A large existing sprite/audio collection is present under \`Sprites/\`; its provenance and redistribution permissions are not fully documented.
 
-## Implemented in the foundation pass
+## Completed foundation work
 
 - Registered \`MechStatManager\` as an autoload.
-- Fixed the player controller scene reference and exported assembler socket wiring in the legacy preview scene.
-- Separated build-budget cost from in-game energy capacity in the existing mech stat layer.
+- Fixed the legacy preview scene's controller reference and assembler socket wiring.
+- Separated build-budget cost from energy capacity in the existing mech stat layer.
 - Improved component validation and managed socket replacement.
 - Removed a hard-coded missing test resource dependency.
-- Aligned the xUnit test project to .NET 8 and added build-rule tests.
-- Added \`AGENTS.md\`, architecture notes, project status tracking, and corrected setup instructions.
+- Aligned xUnit with .NET 8 and added pure build-rule tests.
+- Added repository instructions, architecture notes, and project status tracking.
 - Added remote GitHub Actions validation for Godot 4.6 .NET and .NET 8.
 
-## Workshop implementation in progress
+## Implemented local workshop
 
-- Added a new default workshop scene and a self-contained responsive Control-based interface.
-- Added a small original prototype catalogue for Frame, Mobility, Core, and Utility components.
-- Added derived stat calculation and validation for required slots, component-slot matching, weight, and build-cost limits.
-- Added a vector mech preview using Godot drawing primitives rather than copying additional uncertain third-party art.
-- Added versioned JSON loadout serialization and local \`user://mech_loadout.json\` persistence.
-- Added unit tests for catalogue uniqueness, save/load round-trip, malformed or unsupported saves, aggregate stats, and required-slot validation.
-- The catalogue values are intentionally labelled as project-authored prototype values, not the original game's item stats.
+- Added a default workshop scene with a three-panel Control-based interface.
+- Added a project-authored starter catalogue with four slots: Frame, Mobility, Core, and Utility.
+- Frame and Mobility are required; Core and Utility are optional.
+- Added one item per slot, replacement behavior, optional-slot removal, and a reset-to-starter action.
+- Added live derived statistics and validation for required slots, valid part data, weight, and build-cost limits.
+- Added an original vector mech preview drawn with Godot canvas primitives; the workshop does not copy additional third-party artwork.
+- Added a versioned JSON save payload and per-user \`user://mech_loadout.json\` persistence.
+- Separated pure file persistence from the Godot path adapter so save/load behavior can be tested with temporary files.
+- Added tests for catalogue integrity, stat aggregation, required-slot validation, JSON round-tripping, malformed/unsupported saves, file save/load, and safe handling of invalid replacement data.
+
+All sample part names and balance values are project-authored prototype data. They are not represented as the original game's item database.
+
+## Latest remote verification
+
+The validated branch head \`fc351bf86d1547f9ec121614735bcf5873611782\` passed [GitHub Actions run 41227005160](https://github.com/Adeeb-muhammad/Super-Mech-/actions/runs/41227005160):
+
+- Godot 4.6 .NET resource import: passed.
+- C# build before and after import: passed, each with **0 warnings and 0 errors**.
+- Automated tests: **24/24 passed**, with **0 warnings and 0 errors**.
+- Default workshop scene headless launch: passed.
+
+This verifies import, desktop compilation, the tested domain and file-persistence logic, and scene startup. It does not replace interactive visual QA or mobile aspect-ratio testing.
 
 ## Known limitations and next priorities
 
-1. Run the first remote Godot import/build/test against \`feature/data-driven-workshop\`; resolve all compile and scene-load errors.
-2. Add automated integration coverage for the workshop controller and actual file persistence.
-3. Make the legacy \`MechAssembler\` consume the saved workshop loadout, or replace it with one unified assembly path after compatibility tests.
-4. Add rename/load multiple builds and a simple inventory ownership model.
-5. Add campaign/navigation shell and non-combat progression/reward interfaces.
-6. Complete interactive visual QA for the workshop at desktop and mobile aspect ratios.
-7. Resolve third-party asset provenance or replace unclear assets with original/licensed alternatives.
+1. Complete interactive visual QA at common desktop and mobile aspect ratios; adjust responsive layout where needed.
+2. Add a multi-build save manager with build naming and duplicate/copy actions.
+3. Add an inventory ownership model instead of treating every catalogue entry as immediately available.
+4. Unify the new workshop loadout model with the older \`MechAssembler\` / \`MechPart\` preview path after compatibility tests.
+5. Add the navigation shell and non-combat progression, campaign map, and reward screens.
+6. Resolve third-party asset provenance or replace unclear assets with original/licensed alternatives.
+7. Add automated UI interaction tests for filter selection, equip/replace/remove actions, save, load, and reset.
 
-## Verified foundation baseline
-
-The previously merged main branch passed Godot 4.6 .NET import, C# compilation (0 warnings / 0 errors), 8/8 xUnit tests, and headless main-scene startup in [run 41225392449](https://github.com/Adeeb-muhammad/Super-Mech-/actions/runs/41225392449).
-
-The CI environment logged a non-fatal Android SDK editor-setting message during import. Android export has not been validated. A headless launch confirms startup and script initialization, not interactive visual quality.
+The repository is an improved, tested prototype, not a finished full game.
