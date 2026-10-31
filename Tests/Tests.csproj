@@ -15,7 +15,9 @@
     </PackageReference>
   </ItemGroup>
 
+  <!-- Test the shared pure rule source directly; no Godot SDK or source
+       generators are needed for these tests. -->
   <ItemGroup>
-    <ProjectReference Include="../super mech.csproj" />
+    <Compile Include="../Scripts/Mech/MechBuildRules.cs" Link="MechBuildRules.cs" />
   </ItemGroup>
 </Project>
