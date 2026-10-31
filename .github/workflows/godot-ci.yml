@@ -47,10 +47,15 @@ jobs:
       - name: Restore game dependencies
         run: dotnet restore "super mech.csproj"
 
-      - name: Import Godot project resources and compile C#
+      # Compile once before project import so C# autoload scripts already have
+      # an assembly available during Godot's first filesystem scan.
+      - name: Build C# before Godot import
+        run: dotnet build "super mech.csproj" --configuration Debug --no-restore
+
+      - name: Import Godot project resources
         run: godot --headless --editor --path . --import --quit
 
-      - name: Build game project
+      - name: Rebuild game project after import
         run: dotnet build "super mech.csproj" --configuration Debug --no-restore
 
       - name: Run unit tests
