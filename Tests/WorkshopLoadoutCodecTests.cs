@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.IO;
 using Xunit;
 
 public sealed class WorkshopLoadoutCodecTests
@@ -139,4 +140,63 @@ public sealed class WorkshopLoadoutCodecTests
         Assert.True(MechBuildRules.TryValidateWorkshopLoadout(loadout, 100, 50, out WorkshopBuildStats stats, out string error), error);
         Assert.Equal(52, stats.Weight);
     }
+
+    [Fact]
+    public void FileStore_SavesAndLoadsVersionedBuild()
+    {
+        string directory = Path.Combine(Path.GetTempPath(), "super-mech-workshop-" + System.Guid.NewGuid().ToString("N"));
+        string path = Path.Combine(directory, "mech_loadout.json");
+
+        try
+        {
+            WorkshopLoadoutData original = WorkshopLoadoutCodec.CreateDefault();
+            Assert.True(WorkshopFileStore.TrySave(path, original, out string saveMessage), saveMessage);
+            Assert.True(File.Exists(path));
+
+            Assert.True(WorkshopFileStore.TryLoad(path, out WorkshopLoadoutData restored, out string loadMessage), loadMessage);
+            Assert.Equal("frame_starter", restored.EquippedPartIds["Frame"]);
+            Assert.Equal("mobility_walker", restored.EquippedPartIds["Mobility"]);
+        }
+        finally
+        {
+            if (Directory.Exists(directory))
+                Directory.Delete(directory, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void FileStore_ReturnsDefaultBuildWhenSaveIsMissing()
+    {
+        string directory = Path.Combine(Path.GetTempPath(), "super-mech-workshop-" + System.Guid.NewGuid().ToString("N"));
+        string path = Path.Combine(directory, "missing.json");
+
+        Assert.False(WorkshopFileStore.TryLoad(path, out WorkshopLoadoutData data, out string message));
+        Assert.Equal("frame_starter", data.EquippedPartIds["Frame"]);
+        Assert.Contains("No saved build", message);
+    }
+
+    [Fact]
+    public void FileStore_DoesNotReplaceGoodSaveWhenNewPayloadIsInvalid()
+    {
+        string directory = Path.Combine(Path.GetTempPath(), "super-mech-workshop-" + System.Guid.NewGuid().ToString("N"));
+        string path = Path.Combine(directory, "mech_loadout.json");
+
+        try
+        {
+            WorkshopLoadoutData original = WorkshopLoadoutCodec.CreateDefault();
+            Assert.True(WorkshopFileStore.TrySave(path, original, out string saveMessage), saveMessage);
+
+            var invalid = new WorkshopLoadoutData { Version = 99 };
+            Assert.False(WorkshopFileStore.TrySave(path, invalid, out _));
+
+            Assert.True(WorkshopFileStore.TryLoad(path, out WorkshopLoadoutData restored, out string loadMessage), loadMessage);
+            Assert.Equal("frame_starter", restored.EquippedPartIds["Frame"]);
+        }
+        finally
+        {
+            if (Directory.Exists(directory))
+                Directory.Delete(directory, recursive: true);
+        }
+    }
+
 }

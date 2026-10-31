@@ -23,5 +23,6 @@
     <Compile Include="../Scripts/Mech/Workshop/WorkshopCatalog.cs" Link="WorkshopCatalog.cs" />
     <Compile Include="../Scripts/Mech/Workshop/WorkshopLoadoutData.cs" Link="WorkshopLoadoutData.cs" />
     <Compile Include="../Scripts/Mech/Workshop/WorkshopLoadoutCodec.cs" Link="WorkshopLoadoutCodec.cs" />
+    <Compile Include="../Scripts/Mech/Workshop/WorkshopFileStore.cs" Link="WorkshopFileStore.cs" />
   </ItemGroup>
 </Project>
