@@ -69,7 +69,7 @@ public sealed class WorkshopLoadoutCodecTests
     [Fact]
     public void Serialize_RejectsNullPayload()
     {
-        Assert.Throws<System.ArgumentNullException>(() => WorkshopLoadoutCodec.Serialize(null));
+        Assert.Throws<System.ArgumentNullException>(() => WorkshopLoadoutCodec.Serialize(null!));
     }
 
     [Fact]

@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Text.Json;
@@ -34,7 +35,7 @@ public static class WorkshopLoadoutCodec
 
     public static bool TryDeserialize(string json, out WorkshopLoadoutData data, out string error)
     {
-        data = null;
+        data = new WorkshopLoadoutData();
         error = "";
 
         if (string.IsNullOrWhiteSpace(json))
@@ -45,7 +46,7 @@ public static class WorkshopLoadoutCodec
 
         try
         {
-            WorkshopLoadoutData parsed = JsonSerializer.Deserialize<WorkshopLoadoutData>(json, Options);
+            WorkshopLoadoutData? parsed = JsonSerializer.Deserialize<WorkshopLoadoutData>(json, Options);
             if (parsed == null)
             {
                 error = "Save data did not contain a loadout.";

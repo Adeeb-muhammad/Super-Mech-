@@ -1,3 +1,4 @@
+#nullable enable
 using System.Collections.Generic;
 using System.Linq;
 
@@ -94,7 +95,7 @@ public static class WorkshopCatalog
 
     public static IReadOnlyList<WorkshopPartDefinition> All => Catalogue;
 
-    public static WorkshopPartDefinition FindById(string id)
+    public static WorkshopPartDefinition? FindById(string id)
     {
         if (string.IsNullOrWhiteSpace(id))
             return null;

@@ -168,6 +168,7 @@ public partial class WorkshopScreen : Control
 
         _loadoutSummary = NewLabel("", 11, new Color(0.59f, 0.70f, 0.74f));
         _loadoutSummary.HorizontalAlignment = HorizontalAlignment.Center;
+        _loadoutSummary.AutowrapMode = TextServer.AutowrapMode.WordSmart;
         column.AddChild(_loadoutSummary);
     }
 
@@ -400,11 +401,20 @@ public partial class WorkshopScreen : Control
             buildReady ? new Color(0.50f, 0.82f, 0.66f) : new Color(0.92f, 0.65f, 0.43f));
 
         _preview.SetLoadout(_loadout);
-        _loadoutSummary.Text = $"EQUIPPED SLOTS: {_loadout.Count} / {Enum.GetValues(typeof(MechPartSlot)).Length}";
+        _loadoutSummary.Text =
+            $"FRAME  {GetEquippedName(MechPartSlot.Frame)}     MOBILITY  {GetEquippedName(MechPartSlot.Mobility)}\n" +
+            $"CORE  {GetEquippedName(MechPartSlot.Core)}     UTILITY  {GetEquippedName(MechPartSlot.Utility)}";
         _removeButton.Disabled = _selectedPart == null ||
                                  _selectedPart.Slot == MechPartSlot.Frame ||
                                  _selectedPart.Slot == MechPartSlot.Mobility ||
                                  !_loadout.ContainsKey(_selectedPart.Slot);
+    }
+
+    private string GetEquippedName(MechPartSlot slot)
+    {
+        return _loadout.TryGetValue(slot, out WorkshopPartDefinition part)
+            ? part.DisplayName
+            : "EMPTY";
     }
 
     private static Label AddStatLine(VBoxContainer parent, string name)
