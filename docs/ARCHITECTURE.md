@@ -2,17 +2,17 @@
 
 ## Godot scene layer
 
-\`player_mech.tscn\` is the current entry scene. It contains the visual mech root, socket nodes, static preview sprites, and a \`MechAssembler\` child.
+`player_mech.tscn` is the current entry scene. It contains the visual mech root, socket nodes, static preview sprites, and a `MechAssembler` child.
 
-\`PlayerMechController\` observes \`MechAssembler.MechChanged\` and refreshes the global stat aggregate.
+`PlayerMechController` observes `MechAssembler.MechChanged` and refreshes the global stat aggregate.
 
 ## Mech data layer
 
-- \`MechPart\` is a Godot Resource describing one component.
-- \`MechAssembler\` attaches component sprites to configured sockets and maintains the managed equipped-part collection.
-- \`MechValidator\` applies the Godot-facing validation and diagnostics.
-- \`MechBuildRules\` contains pure C# budget rules that can be tested without starting the Godot runtime.
-- \`MechStatManager\` aggregates component stats and is configured as an autoload.
+- `MechPart` is a Godot Resource describing one component.
+- `MechAssembler` attaches component sprites to configured sockets and maintains the managed equipped-part collection.
+- `MechValidator` applies the Godot-facing validation and diagnostics.
+- `MechBuildRules` contains pure C# budget rules that can be tested without starting the Godot runtime.
+- `MechStatManager` aggregates component stats and is configured as an autoload.
 
 Build-budget energy cost and in-game energy capacity are intentionally separate properties. Do not reuse one for the other.
 

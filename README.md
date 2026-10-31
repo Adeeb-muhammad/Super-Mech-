@@ -14,22 +14,22 @@ Use the .NET edition of Godot; the standard editor cannot build C# scripts.
 
 ## Clone and open
 
-\`\`\`bash
+```bash
 git clone https://github.com/Adeeb-muhammad/Super-Mech-.git
 cd Super-Mech-
-\`\`\`
+```
 
-Open \`project.godot\` in Godot 4.6 .NET and allow the editor to import the project and build the C# assembly.
+Open `project.godot` in Godot 4.6 .NET and allow the editor to import the project and build the C# assembly.
 
 ## Build and test
 
 From the repository root:
 
-\`\`\`bash
+```bash
 dotnet restore "super mech.csproj"
 dotnet build "super mech.csproj"
 dotnet test "Tests/Tests.csproj"
-\`\`\`
+```
 
 The test project targets the same .NET 8 framework as the desktop game and references the game project. Test sources are excluded from the game assembly.
 
@@ -37,19 +37,19 @@ The test project targets the same .NET 8 framework as the desktop game and refer
 
 | Path | Responsibility |
 | --- | --- |
-| \`Scripts/Combat/\` | Turn flow, combatant adapters, combat UI and AI coordination |
-| \`Scripts/Core/\` | Shared gameplay constants |
-| \`Scripts/Mech/\` | Component resources, assembly, validation and stat aggregation |
-| \`Tests/\` | Automated tests for pure C# rules |
-| \`Sprites/\` | Existing visual and audio resources |
-| \`docs/PROJECT_STATUS.md\` | Audited implementation status and outstanding work |
-| \`AGENTS.md\` | Development and repository-maintenance instructions |
+| `Scripts/Combat/` | Turn flow, combatant adapters, combat UI and AI coordination |
+| `Scripts/Core/` | Shared gameplay constants |
+| `Scripts/Mech/` | Component resources, assembly, validation and stat aggregation |
+| `Tests/` | Automated tests for pure C# rules |
+| `Sprites/` | Existing visual and audio resources |
+| `docs/PROJECT_STATUS.md` | Audited implementation status and outstanding work |
+| `AGENTS.md` | Development and repository-maintenance instructions |
 
 ## Current architecture notes
 
-- \`MechStatManager\` is registered as an autoload at \`/root/MechStatManager\`.
-- \`MechPart.EnergyCost\` is the build-budget cost; \`EnergyCapacity\` contributes to the in-game energy reserve. They are separate concepts.
-- A component can be equipped into a configured socket through \`MechAssembler.TryAttachPart\`. Re-equipping an already-managed socket replaces the prior managed component.
+- `MechStatManager` is registered as an autoload at `/root/MechStatManager`.
+- `MechPart.EnergyCost` is the build-budget cost; `EnergyCapacity` contributes to the in-game energy reserve. They are separate concepts.
+- A component can be equipped into a configured socket through `MechAssembler.TryAttachPart`. Re-equipping an already-managed socket replaces the prior managed component.
 - The main scene's preassembled preview art is currently static. It is not yet a complete data-backed saved mech loadout.
 - Combat scripts are present, but the main scene does not yet connect them into a complete playable combat screen.
 

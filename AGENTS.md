@@ -7,7 +7,7 @@
 - The main scene is currently a mech preview/assembly scene; do not describe the repository as a complete playable game.
 
 ## Before changing code
-1. Read this file and \`docs/PROJECT_STATUS.md\`.
+1. Read this file and `docs/PROJECT_STATUS.md`.
 2. Inspect the scene, scripts, resources, and call sites affected by a proposed change.
 3. Preserve stable resource UIDs and scene node paths unless a change intentionally updates every reference.
 4. Keep game logic modular and avoid adding dependencies without a clear need.
@@ -15,17 +15,17 @@
 
 ## Godot and C# conventions
 - Use Godot 4 APIs and C# scripts inheriting from the appropriate Godot base class.
-- Godot-attached C# classes must be \`partial\`.
+- Godot-attached C# classes must be `partial`.
 - Use typed exported properties for scene/resource references.
 - Validate exported Node and Resource references before using them.
-- Connect signals/events in \`_Ready\` and disconnect owned connections in \`_ExitTree\`.
+- Connect signals/events in `_Ready` and disconnect owned connections in `_ExitTree`.
 - Keep pure rules/calculations independent of Godot where practical so they can be unit-tested.
-- Keep test source under \`Tests/\`; the game project explicitly excludes that directory from compilation.
-- Do not modify generated \`.godot/\`, \`bin/\`, or \`obj/\` content.
+- Keep test source under `Tests/`; the game project explicitly excludes that directory from compilation.
+- Do not modify generated `.godot/`, `bin/`, or `obj/` content.
 
 ## Validation
-- Run \`dotnet build "super mech.csproj"\`.
-- Run \`dotnet test "Tests/Tests.csproj"\`.
+- Run `dotnet build "super mech.csproj"`.
+- Run `dotnet test "Tests/Tests.csproj"`.
 - Open the project in Godot 4.6 .NET, allow imports to complete, and run the main scene.
 - Inspect the Output and Debugger panels for parser, import, C#, and scene-reference errors.
 - Report any checks that could not be run. Never state that an unrun test passed.
