@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://evucg5r672e2"]
 
-[ext_resource type="Script" uid="uid://dym8vybhljwxc" path="res://Scripts/Resources/PlayerMechController.cs" id="1_mhbhr"]
+[ext_resource type="Script" uid="uid://bgnci1v070vyy" path="res://Scripts/Mech/PlayerMechController.cs" id="1_mhbhr"]
 [ext_resource type="Script" uid="uid://cl7uyf34nl0sa" path="res://Scripts/Mech/MechAssembler.cs" id="2_jv763"]
 [ext_resource type="Texture2D" uid="uid://l7tbckgwxyag" path="res://Sprites/Super Mechs Sprites/Super Mechs Sprites/Sprites(torsos,legs,drones)/1192.png" id="3_bsmnk"]
 [ext_resource type="Texture2D" uid="uid://ctjymq243mpub" path="res://Sprites/Super Mechs Sprites/Super Mechs Sprites/Sprites(Guns)/2428.png" id="4_phnme"]
@@ -25,9 +25,13 @@ LeftArmUpSocket = NodePath("LeftArmSocket/LeftArmUpSocket")
 RightArmDownSocket = NodePath("RightArmSocket/RightArmDownSocket")
 RightArmUpSocket = NodePath("RightArmSocket/RightArmUpSocket")
 
-[node name="MechAssembler" type="Node2D" parent="." unique_id=1782718075]
+[node name="MechAssembler" type="Node2D" parent="." unique_id=1782718075 node_paths=PackedStringArray("TorsoSocket", "LegSocket", "LeftArmSocket", "RightArmSocket")]
 position = Vector2(-7, 18)
 script = ExtResource("2_jv763")
+TorsoSocket = NodePath("../TorsoSocket")
+LegSocket = NodePath("../LegSocket")
+LeftArmSocket = NodePath("../LeftArmSocket")
+RightArmSocket = NodePath("../RightArmSocket")
 
 [node name="TorsoSocket" type="Node2D" parent="." unique_id=2099620441]
 position = Vector2(-193, -71)
