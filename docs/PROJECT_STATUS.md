@@ -45,3 +45,8 @@
 5. Build a cohesive navigation shell and connect the workshop and gameplay flows.
 6. Add automated scene smoke tests and CI validation.
 7. Resolve third-party asset provenance or replace unclear assets with original/licensed alternatives.
+
+## Remote validation
+
+- Added a GitHub Actions workflow on the default branch that provisions Godot 4.6 .NET and .NET 8, imports the project, builds the solution, runs the test project, and launches the main scene headlessly. The first run against the default branch is in progress; the development branch is queued for the next push.
+- Removed stale root-node scene property assignments that did not correspond to any exported properties on `PlayerMechController`.
