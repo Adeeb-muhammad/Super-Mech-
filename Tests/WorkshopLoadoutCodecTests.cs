@@ -89,8 +89,8 @@ public sealed class WorkshopLoadoutCodecTests
     {
         WorkshopBuildStats stats = MechBuildRules.CalculateWorkshopStats(new[]
         {
-            WorkshopCatalog.FindById("frame_starter"),
-            WorkshopCatalog.FindById("mobility_walker")
+            WorkshopCatalog.FindById("frame_starter")!,
+            WorkshopCatalog.FindById("mobility_walker")!
         });
 
         Assert.Equal(135, stats.Health);
@@ -106,7 +106,7 @@ public sealed class WorkshopLoadoutCodecTests
     {
         var loadout = new Dictionary<MechPartSlot, WorkshopPartDefinition>
         {
-            [MechPartSlot.Frame] = WorkshopCatalog.FindById("frame_starter")
+            [MechPartSlot.Frame] = WorkshopCatalog.FindById("frame_starter")!
         };
 
         Assert.False(MechBuildRules.TryValidateWorkshopLoadout(loadout, 100, 50, out _, out string error));
@@ -118,8 +118,8 @@ public sealed class WorkshopLoadoutCodecTests
     {
         var loadout = new Dictionary<MechPartSlot, WorkshopPartDefinition>
         {
-            [MechPartSlot.Frame] = WorkshopCatalog.FindById("mobility_walker"),
-            [MechPartSlot.Mobility] = WorkshopCatalog.FindById("frame_starter")
+            [MechPartSlot.Frame] = WorkshopCatalog.FindById("mobility_walker")!,
+            [MechPartSlot.Mobility] = WorkshopCatalog.FindById("frame_starter")!
         };
 
         Assert.False(MechBuildRules.TryValidateWorkshopLoadout(loadout, 100, 50, out _, out string error));
