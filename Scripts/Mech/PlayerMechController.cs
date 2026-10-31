@@ -1,22 +1,45 @@
 using Godot;
 
 /// <summary>
-/// Root controller for PlayerMech. Connects MechAssembler to MechStatManager for auto stat updates.
-/// Attach this script to the PlayerMech root node.
+/// Connects visual assembly changes to the global mech-stat aggregator.
 /// </summary>
 public partial class PlayerMechController : Node2D
 {
-	private MechAssembler _assembler;
+    private MechAssembler _assembler;
+    private MechStatManager _statManager;
 
-	public override void _Ready()
-	{
-		_assembler = GetNode<MechAssembler>("MechAssembler");
-		_assembler.MechChanged += OnMechChanged;
-	}
+    public override void _Ready()
+    {
+        _assembler = GetNodeOrNull<MechAssembler>("MechAssembler");
+        _statManager = GetNodeOrNull<MechStatManager>("/root/MechStatManager");
 
-	private void OnMechChanged()
-	{
-		var statManager = GetNode<MechStatManager>("/root/MechStatManager");
-		statManager.CalculateStats(_assembler.GetEquippedParts());
-	}
+        if (_assembler == null)
+        {
+            GD.PushError("PlayerMechController: MechAssembler child was not found.");
+            return;
+        }
+
+        if (_statManager == null)
+        {
+            GD.PushError("PlayerMechController: MechStatManager autoload was not found.");
+            return;
+        }
+
+        _assembler.MechChanged += OnMechChanged;
+        OnMechChanged();
+    }
+
+    private void OnMechChanged()
+    {
+        if (_assembler == null || _statManager == null)
+            return;
+
+        _statManager.CalculateStats(_assembler.GetEquippedParts());
+    }
+
+    public override void _ExitTree()
+    {
+        if (_assembler != null)
+            _assembler.MechChanged -= OnMechChanged;
+    }
 }

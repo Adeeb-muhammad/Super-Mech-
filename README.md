@@ -1,69 +1,60 @@
-# Super Mechs 1-to-1 Remake
+# Super Mech
 
-Rebuilding the original classic Super Mechs turn-based tactical combat engine completely from scratch. This project delivers a faithful 1-to-1 recreation of the original legacy game loops, built around a clean, testable, and type-safe C# core that is decoupled from Godot's scene tree.
+An unofficial fan-made mech game prototype built with **Godot 4.6 .NET** and **C#**.
 
----
-
-## 🚀 Project Overview
-
-The goal of this project is to faithfully recreate the tactical depth, math, and logic of the original game within a modern, scalable architecture. By keeping the core backend engine strictly decoupled from Godot's visual node hierarchy, core game math, stat calculations, turn pacing, and state management can be implemented in pure C# and tested outside the editor.
-
-## 🛠️ Tech Stack & Architecture
-
-- Game Engine: Godot v4.6 (Stable)
-- Language: C# (.NET)
-- Workflow Philosophy: Vibe Coding (clean, decoupled architecture and compile-time safe systems)
-- Target Platform: Desktop (`.exe`) for initial test phases
+This repository is an evolving implementation, not a finished or verified 1-to-1 recreation. The current main scene is a mech preview/assembly scene. Several gameplay scripts exist, but a complete playable loop and progression flow are not yet connected.
 
 ## Requirements
 
-- Godot 4.6 editor
-- .NET SDK 7.0 or later
-- (Optional) Visual Studio / Visual Studio Code with C# extension
+- Godot **4.6 .NET** editor build
+- .NET SDK **8.0** for desktop development
+- Git
 
-> Make sure Godot is configured to use the installed .NET SDK (Editor → Editor Settings → Mono).
+Use the .NET edition of Godot; the standard editor cannot build C# scripts.
 
----
+## Clone and open
 
-## Quickstart — Open & Run in Godot
+```bash
+git clone https://github.com/Adeeb-muhammad/Super-Mech-.git
+cd Super-Mech-
+```
 
-1. Clone the repo:
+Open `project.godot` in Godot 4.6 .NET and allow the editor to import the project and build the C# assembly.
 
-   git clone https://github.com/Adeeb-muhammad/new-game-project.git
-   cd new-game-project
+## Build and test
 
-2. Open `project.godot` with Godot 4.6.
-3. Allow Godot to import the project and compile the C# assemblies.
-4. Run the main scene from the editor.
+From the repository root:
 
----
+```bash
+dotnet restore "super mech.csproj"
+dotnet build "super mech.csproj"
+dotnet test "Tests/Tests.csproj"
+```
 
-## Build from CLI
+The test project targets the same .NET 8 framework as the desktop game and references the game project. Test sources are excluded from the game assembly.
 
-   dotnet restore
-   dotnet build "super mech.csproj"
+## Project structure
 
----
+| Path | Responsibility |
+| --- | --- |
+| `Scripts/Combat/` | Turn flow, combatant adapters, combat UI and AI coordination |
+| `Scripts/Core/` | Shared gameplay constants |
+| `Scripts/Mech/` | Component resources, assembly, validation and stat aggregation |
+| `Tests/` | Automated tests for pure C# rules |
+| `Sprites/` | Existing visual and audio resources |
+| `docs/PROJECT_STATUS.md` | Audited implementation status and outstanding work |
+| `AGENTS.md` | Development and repository-maintenance instructions |
 
-## Running Tests
+## Current architecture notes
 
-To add unit tests, create a `Tests/` project (xUnit or NUnit) and reference the core library. Run:
+- `MechStatManager` is registered as an autoload at `/root/MechStatManager`.
+- `MechPart.EnergyCost` is the build-budget cost; `EnergyCapacity` contributes to the in-game energy reserve. They are separate concepts.
+- A component can be equipped into a configured socket through `MechAssembler.TryAttachPart`. Re-equipping an already-managed socket replaces the prior managed component.
+- The main scene's preassembled preview art is currently static. It is not yet a complete data-backed saved mech loadout.
+- Combat scripts are present, but the main scene does not yet connect them into a complete playable combat screen.
 
-   dotnet test ./Tests
+## Asset and license notice
 
----
+The repository contains a large collection of sprites and audio files whose provenance and redistribution permissions are not fully documented. The root MIT license should not be interpreted as granting rights to third-party content. Confirm the source and license of each third-party asset before redistribution; use original or clearly licensed replacements where permission is uncertain.
 
-## Exporting a Standalone Build
-
-1. Install export templates in Godot (Project → Install Export Templates).
-2. Configure an Export Preset (Project → Export).
-3. Build/export from the editor.
-
----
-
-## d Next Steps
-
-- Implement core systems in `Scripts/Core/` as pure C# (GameState, EventBus, Constants).
-- Add a `Tests/` project with unit tests for combat math and turn resolution.
-- Add `CONTRIBUTING.md` and `LICENSE` if needed.
-
+This is an unofficial fan project and is not affiliated with or endorsed by TactiSoft.

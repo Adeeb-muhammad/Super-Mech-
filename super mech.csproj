@@ -5,4 +5,9 @@
     <EnableDynamicLoading>true</EnableDynamicLoading>
     <RootNamespace>supermech</RootNamespace>
   </PropertyGroup>
+
+  <!-- Test sources belong to Tests/Tests.csproj, not the game assembly. -->
+  <ItemGroup>
+    <Compile Remove="Tests/**/*.cs" />
+  </ItemGroup>
 </Project>

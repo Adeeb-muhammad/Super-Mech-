@@ -2,77 +2,105 @@ using Godot;
 using System.Collections.Generic;
 
 /// <summary>
-/// Attaches MechPart sprites to sockets on the PlayerMech.
+/// Attaches component sprites to the configured mech sockets and keeps the
+/// equipped-component list synchronized with the visual assembly.
 /// </summary>
 public partial class MechAssembler : Node2D
 {
-	[Export] public Node2D TorsoSocket { get; set; }
-	[Export] public Node2D LegSocket { get; set; }
-	[Export] public Node2D LeftArmSocket { get; set; }
-	[Export] public Node2D RightArmSocket { get; set; }
+    [Export] public Node2D TorsoSocket { get; set; }
+    [Export] public Node2D LegSocket { get; set; }
+    [Export] public Node2D LeftArmSocket { get; set; }
+    [Export] public Node2D RightArmSocket { get; set; }
 
-	// Define the signal so PlayerMechController can listen for changes
-	[Signal]
-	public delegate void MechChangedEventHandler();
+    [Signal]
+    public delegate void MechChangedEventHandler();
 
-	// Track equipped parts
-	private List<MechPart> _equippedParts = new List<MechPart>();
+    private sealed class SlotAssignment
+    {
+        public MechPart Part { get; }
+        public Sprite2D Sprite { get; }
 
-	// A quick reference to our global stat manager
-	private MechStatManager _statManager;
+        public SlotAssignment(MechPart part, Sprite2D sprite)
+        {
+            Part = part;
+            Sprite = sprite;
+        }
+    }
 
-	public override void _Ready()
-	{
-		// Make sure MechStatManager is registered as an Autoload/Singleton in Project Settings
-		_statManager = GetNode<MechStatManager>("/root/MechStatManager");
-	}
+    private readonly List<MechPart> _equippedParts = new();
+    private readonly Dictionary<Node2D, SlotAssignment> _slotAssignments = new();
+    private MechStatManager _statManager;
 
-	// Getter for the controller to use
-	public List<MechPart> GetEquippedParts()
-	{
-		return _equippedParts;
-	}
+    public override void _Ready()
+    {
+        _statManager = GetNodeOrNull<MechStatManager>("/root/MechStatManager");
+        if (_statManager == null)
+            GD.PushError("MechAssembler: MechStatManager autoload is missing.");
+    }
 
-	/// <summary>
-	/// Validates the part first. If it passes, attaches it. 
-	/// Returns true if successful, false if validation failed.
-	/// </summary>
-	public bool TryAttachPart(MechPart part, Node2D socket)
-	{
-		if (part == null || socket == null)
-			return false;
+    public IReadOnlyList<MechPart> GetEquippedParts()
+    {
+        return _equippedParts.AsReadOnly();
+    }
 
-		// 1. Validate the part against our current stats
-		bool isValid = MechValidator.CanEquipPart(_statManager.CurrentStats, part);
+    /// <summary>
+    /// Equips a component in a socket. Equipping into an occupied socket replaces
+    /// that socket's previous component rather than stacking another sprite.
+    /// </summary>
+    public bool TryAttachPart(MechPart part, Node2D socket)
+    {
+        if (part == null || part.Sprite == null)
+        {
+            GD.PushWarning("MechAssembler: A component and its sprite are required.");
+            return false;
+        }
 
-		if (!isValid)
-		{
-			// Validation failed (weight or energy limit reached). 
-			return false;
-		}
+        if (socket == null || !GodotObject.IsInstanceValid(socket))
+        {
+            GD.PushWarning("MechAssembler: The target socket is missing or no longer valid.");
+            return false;
+        }
 
-		// 2. If valid, proceed with attaching
-		AttachPart(part, socket);
+        if (_statManager == null || !GodotObject.IsInstanceValid(_statManager))
+        {
+            GD.PushError("MechAssembler: Cannot equip components without MechStatManager.");
+            return false;
+        }
 
-		return true;
-	}
+        _slotAssignments.TryGetValue(socket, out SlotAssignment previous);
+        MechStatManager.MechStats statsForValidation = _statManager.CurrentStats;
 
-	/// <summary>
-	/// Creates a Sprite2D from the part's texture and adds it as a child of the socket.
-	/// </summary>
-	public void AttachPart(MechPart part, Node2D socket)
-	{
-		if (part?.Sprite == null || socket == null)
-			return;
+        if (previous != null)
+            statsForValidation = MechStatManager.WithoutPart(statsForValidation, previous.Part);
 
-		var sprite = new Sprite2D
-		{
-			Texture = part.Sprite
-		};
-		socket.AddChild(sprite);
+        if (!MechValidator.CanEquipPart(statsForValidation, part))
+            return false;
 
-		// Add to list and emit the signal so PlayerMechController updates stats
-		_equippedParts.Add(part);
-		EmitSignal(SignalName.MechChanged);
-	}
+        var sprite = new Sprite2D
+        {
+            Texture = part.Sprite,
+            Name = "EquippedComponent"
+        };
+        socket.AddChild(sprite);
+
+        if (previous != null)
+        {
+            _equippedParts.Remove(previous.Part);
+            if (GodotObject.IsInstanceValid(previous.Sprite))
+                previous.Sprite.QueueFree();
+        }
+
+        _equippedParts.Add(part);
+        _slotAssignments[socket] = new SlotAssignment(part, sprite);
+        EmitSignal(SignalName.MechChanged);
+        return true;
+    }
+
+    /// <summary>
+    /// Backwards-compatible wrapper for existing editor/test callers.
+    /// </summary>
+    public bool AttachPart(MechPart part, Node2D socket)
+    {
+        return TryAttachPart(part, socket);
+    }
 }

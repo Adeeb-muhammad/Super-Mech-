@@ -1,33 +1,54 @@
 using Godot;
 
+/// <summary>
+/// Validates a proposed component against the current build budgets.
+/// </summary>
 public static class MechValidator
 {
-    // Define your global limits here, or pass them in dynamically if they change per-mech
     public static int MaxWeight { get; set; } = 100;
     public static int MaxEnergy { get; set; } = 50;
 
-    /// <summary>
-    /// Checks if a part can be equipped based on weight and energy cost limits.
-    /// </summary>
     public static bool CanEquipPart(MechStatManager.MechStats currentStats, MechPart newPart)
     {
-        if (newPart == null) return false;
+        if (newPart == null)
+            return false;
 
-        bool isWeightValid = (currentStats.TotalWeight + newPart.Weight) <= MaxWeight;
-        bool isEnergyValid = (currentStats.TotalEnergyCost + newPart.EnergyCost) <= MaxEnergy;
-
-        if (!isWeightValid)
+        if (newPart.Weight < 0 || newPart.EnergyCost < 0 ||
+            newPart.HP < 0 || newPart.EnergyCapacity < 0 ||
+            newPart.HeatGenerated < 0 || newPart.Cooling < 0 ||
+            newPart.AttackPower < 0 || newPart.Defense < 0)
         {
-            GD.PrintErr($"Validation Failed: Adding {newPart.ResourceName} exceeds max weight! ({currentStats.TotalWeight + newPart.Weight} / {MaxWeight})");
+            GD.PushWarning($"Cannot equip '{GetPartName(newPart)}': component stats cannot be negative.");
             return false;
         }
 
-        if (!isEnergyValid)
+        bool valid = MechBuildRules.CanEquip(
+            currentStats.TotalWeight,
+            newPart.Weight,
+            MaxWeight,
+            currentStats.TotalEnergyCost,
+            newPart.EnergyCost,
+            MaxEnergy);
+
+        if (!valid)
         {
-            GD.PrintErr($"Validation Failed: Adding {newPart.ResourceName} exceeds max energy! ({currentStats.TotalEnergyCost + newPart.EnergyCost} / {MaxEnergy})");
-            return false;
+            long nextWeight = (long)currentStats.TotalWeight + newPart.Weight;
+            long nextEnergy = (long)currentStats.TotalEnergyCost + newPart.EnergyCost;
+            GD.PrintErr($"Cannot equip '{GetPartName(newPart)}': build budget exceeded " +
+                        $"(weight {nextWeight}/{MaxWeight}, energy cost {nextEnergy}/{MaxEnergy}).");
         }
 
-        return true;
+        return valid;
+    }
+
+    private static string GetPartName(MechPart part)
+    {
+        if (!string.IsNullOrWhiteSpace(part.PartName))
+            return part.PartName;
+
+        if (!string.IsNullOrWhiteSpace(part.ResourceName))
+            return part.ResourceName;
+
+        return "unnamed component";
     }
 }
