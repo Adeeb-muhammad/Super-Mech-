@@ -1,25 +1,26 @@
 # Architecture overview
 
-## Godot scene layer
+## Entry scene
 
-`player_mech.tscn` is the current entry scene. It contains the visual mech root, socket nodes, static preview sprites, and a `MechAssembler` child.
+\`project.godot\` opens \`Scenes/Workshop/workshop.tscn\`. \`WorkshopScreen\` builds the local workshop UI in code and owns the current interaction state.
 
-`PlayerMechController` observes `MechAssembler.MechChanged` and refreshes the global stat aggregate.
+## Workshop domain
 
-## Mech data layer
+- \`WorkshopPartDefinition\` describes a project-authored workshop component.
+- \`WorkshopCatalog\` contains the small starter catalogue. Its values are prototype balance values, not a transcription of the source game's database.
+- \`MechPartSlot\` defines the non-combat equipment slots: Frame, Mobility, Core, and Utility.
+- \`WorkshopLoadoutData\` is the versioned save payload.
+- \`WorkshopLoadoutCodec\` validates and serializes the payload as JSON.
+- \`WorkshopSaveStore\` reads/writes the payload under Godot's per-user \`user://\` location.
+- \`MechBuildRules\` calculates derived stats, checks required slots, and enforces the prototype build limits.
+- \`MechWorkshopPreview\` draws an original vector mech preview using Godot canvas primitives.
 
-- `MechPart` is a Godot Resource describing one component.
-- `MechAssembler` attaches component sprites to configured sockets and maintains the managed equipped-part collection.
-- `MechValidator` applies the Godot-facing validation and diagnostics.
-- `MechBuildRules` contains pure C# budget rules that can be tested without starting the Godot runtime.
-- `MechStatManager` aggregates component stats and is configured as an autoload.
+## Existing mech assembly prototype
 
-Build-budget energy cost and in-game energy capacity are intentionally separate properties. Do not reuse one for the other.
+The older \`player_mech.tscn\` scene remains in the repository. \`MechPart\`, \`MechAssembler\`, \`MechValidator\`, \`PlayerMechController\`, and the \`MechStatManager\` autoload are retained. That scene's static preview is not yet connected to the new workshop save model.
 
-## Combat layer
-
-The repository contains combatant adapters, a turn coordinator, an AI coordinator, a UI listener, and a small constants class. These scripts are not currently wired into the configured main scene. Their integration should be done in a dedicated scene rather than adding unrelated gameplay nodes to the mech preview.
+Build-budget cost and in-game energy capacity are separate values and must not be conflated.
 
 ## Testing boundary
 
-Pure calculations belong in regular C# helpers where practical. Godot scene behavior and resource loading require Godot-aware validation in addition to unit tests.
+The test project links pure workshop-domain sources and uses xUnit without the Godot SDK. Godot-specific drawing, controls, and user:// file operations are checked by the remote Godot CI import/build/headless startup workflow; interactive layout and save/load testing still require further smoke-test coverage.

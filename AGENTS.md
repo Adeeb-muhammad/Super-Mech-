@@ -2,38 +2,45 @@
 
 ## Project baseline
 - This is an unofficial fan project implemented with Godot 4.6 and C#.
-- The game project targets .NET 8 (Android builds use the configured .NET 9 target).
+- The desktop game project targets .NET 8.
 - Open the project with the Godot 4.6 .NET editor. Do not open it with a non-.NET editor build.
-- The main scene is currently a mech preview/assembly scene; do not describe the repository as a complete playable game.
+- The default entry scene is \`Scenes/Workshop/workshop.tscn\`, a local workshop prototype. Do not describe the repository as a complete game.
 
 ## Before changing code
-1. Read this file and `docs/PROJECT_STATUS.md`.
+1. Read this file and \`docs/PROJECT_STATUS.md\`.
 2. Inspect the scene, scripts, resources, and call sites affected by a proposed change.
 3. Preserve stable resource UIDs and scene node paths unless a change intentionally updates every reference.
 4. Keep game logic modular and avoid adding dependencies without a clear need.
-5. Do not invent game balance values or claim exact parity with the original game without a reliable source.
+5. Do not invent source-game balance values or claim exact parity without reliable references.
+6. Keep workshop prototype catalogue values clearly labelled as project-authored data.
 
 ## Godot and C# conventions
 - Use Godot 4 APIs and C# scripts inheriting from the appropriate Godot base class.
-- Godot-attached C# classes must be `partial`.
+- Godot-attached C# classes must be \`partial\`.
 - Use typed exported properties for scene/resource references.
 - Validate exported Node and Resource references before using them.
-- Connect signals/events in `_Ready` and disconnect owned connections in `_ExitTree`.
-- Keep pure rules/calculations independent of Godot where practical so they can be unit-tested.
-- Keep test source under `Tests/`; the game project explicitly excludes that directory from compilation.
-- Do not modify generated `.godot/`, `bin/`, or `obj/` content.
+- Connect signals/events in \`_Ready\` and disconnect owned connections in \`_ExitTree\`.
+- Keep pure rules, catalogues, and serialization independent of Godot where practical so they can be unit-tested.
+- Keep test source under \`Tests/\`; the game project explicitly excludes that directory from compilation.
+- Do not modify generated \`.godot/\`, \`bin/\`, or \`obj/\` content.
+
+## Persistence
+- Store per-user local settings and loadouts under \`user://\`.
+- Include an explicit save schema version.
+- Reject malformed or unsupported data safely and retain a default build if loading fails.
+- Do not store credentials or secrets in the project.
 
 ## Validation
-- Run `dotnet build "super mech.csproj"`.
-- Run `dotnet test "Tests/Tests.csproj"`.
-- Open the project in Godot 4.6 .NET, allow imports to complete, and run the main scene.
+- Run \`dotnet build "super mech.csproj"\`.
+- Run \`dotnet test "Tests/Tests.csproj"\`.
+- Open the project in Godot 4.6 .NET, allow imports to complete, and run the configured main scene.
 - Inspect the Output and Debugger panels for parser, import, C#, and scene-reference errors.
 - Report any checks that could not be run. Never state that an unrun test passed.
 
 ## Assets and licensing
 - The provenance and redistribution rights of some legacy-looking sprite/audio files are not documented in this repository.
 - Do not assume the root MIT license grants rights to third-party assets.
-- Before adding or redistributing third-party content, record its source and license. Prefer original or clearly licensed replacements when rights are uncertain.
+- Before adding or redistributing third-party content, record its source and license. Prefer original or clearly licensed replacements where rights are uncertain.
 - Keep asset filenames and resource paths stable unless all references have been updated.
 
 ## Git workflow
