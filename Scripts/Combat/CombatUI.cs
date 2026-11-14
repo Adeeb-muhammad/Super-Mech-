@@ -50,6 +50,9 @@ public partial class CombatUI : Control
 		{
 			AttackButton.Pressed += OnAttackButtonPressed;
 		}
+
+		// TurnManager may have entered its initial state before this UI connected.
+		UpdateTurnIndicator();
 	}
 
 	/// <summary>
