@@ -85,6 +85,41 @@ public sealed class WorkshopLoadoutCodecTests
         }
     }
 
+    [Theory]
+    [InlineData("")]
+    [InlineData("blue")]
+    [InlineData("#12GG89")]
+    [InlineData("#12345")]
+    [InlineData("#123456789")]
+    public void PartValidation_RejectsInvalidPreviewColors(string color)
+    {
+        var part = new WorkshopPartDefinition
+        {
+            Id = "test_part",
+            DisplayName = "Test Part",
+            Slot = MechPartSlot.Core,
+            PreviewColor = color
+        };
+
+        Assert.False(part.HasValidData());
+    }
+
+    [Theory]
+    [InlineData("#123456")]
+    [InlineData("#12345678")]
+    public void PartValidation_AcceptsHexPreviewColors(string color)
+    {
+        var part = new WorkshopPartDefinition
+        {
+            Id = "test_part",
+            DisplayName = "Test Part",
+            Slot = MechPartSlot.Core,
+            PreviewColor = color
+        };
+
+        Assert.True(part.HasValidData());
+    }
+
     [Fact]
     public void WorkshopStats_AggregateEquippedParts()
     {
