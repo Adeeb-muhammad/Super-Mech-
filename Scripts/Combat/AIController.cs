@@ -1,5 +1,4 @@
 using Godot;
-using System;
 
 /// <summary>
 /// Basic Tactical AI for the Enemy.
@@ -11,12 +10,23 @@ public partial class AIController : Node
     [Export] public EnemyCombatant Enemy { get; set; }
     [Export] public MechCombatant Player { get; set; }
 
+    public bool IsConfiguredFor(TurnManager expectedManager, EnemyCombatant expectedEnemy, MechCombatant expectedPlayer)
+    {
+        return TurnManager != null && Enemy != null && Player != null &&
+               GodotObject.IsInstanceValid(TurnManager) &&
+               GodotObject.IsInstanceValid(Enemy) &&
+               GodotObject.IsInstanceValid(Player) &&
+               TurnManager == expectedManager &&
+               Enemy == expectedEnemy &&
+               Player == expectedPlayer;
+    }
+
     /// <summary>
     /// Evaluates combat state and executes an action.
     /// </summary>
     public void DecideAction()
     {
-        if (TurnManager == null || Enemy == null || Player == null)
+        if (!IsConfiguredFor(TurnManager, Enemy, Player))
         {
             GD.PrintErr("AIController missing references!");
             return;
@@ -27,7 +37,7 @@ public partial class AIController : Node
 
         if (playerPosComp != null && enemyPosComp != null)
         {
-            int distance = Math.Abs(playerPosComp.Position - enemyPosComp.Position);
+            long distance = CombatRules.Distance(playerPosComp.Position, enemyPosComp.Position);
             
             int attackRange = CombatConstants.DefaultAttackRange;
 
@@ -39,7 +49,7 @@ public partial class AIController : Node
             else
             {
                 // Out of range: Move 1 step closer
-                int direction = Math.Sign(playerPosComp.Position - enemyPosComp.Position);
+                int direction = playerPosComp.Position > enemyPosComp.Position ? 1 : -1;
                 int targetPosition = enemyPosComp.Position + direction;
                 
                 // Collision check
