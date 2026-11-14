@@ -28,7 +28,9 @@ public partial class AIController : Node
     {
         if (!IsConfiguredFor(TurnManager, Enemy, Player))
         {
-            GD.PrintErr("AIController missing references!");
+            GD.PrintErr("AIController missing or invalid references; using the enemy's basic action.");
+            if (TurnManager != null && GodotObject.IsInstanceValid(TurnManager))
+                TurnManager.ExecuteEnemyAttack();
             return;
         }
 
