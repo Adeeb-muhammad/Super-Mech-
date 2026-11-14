@@ -101,6 +101,48 @@ public sealed class MechBuildRulesTests
     }
 
     [Fact]
+    public void CanRemoveSelectedOptionalPart_ReturnsTrue_WhenSelectedPartIsEquipped()
+    {
+        WorkshopPartDefinition equipped = WorkshopCatalog.FindById("core_compact")!;
+        var loadout = new Dictionary<MechPartSlot, WorkshopPartDefinition>
+        {
+            [MechPartSlot.Frame] = WorkshopCatalog.FindById("frame_starter")!,
+            [MechPartSlot.Mobility] = WorkshopCatalog.FindById("mobility_walker")!,
+            [MechPartSlot.Core] = equipped
+        };
+
+        Assert.True(MechBuildRules.CanRemoveSelectedOptionalPart(loadout, equipped));
+    }
+
+    [Fact]
+    public void CanRemoveSelectedOptionalPart_ReturnsFalse_WhenAnotherPartOccupiesTheSelectedSlot()
+    {
+        WorkshopPartDefinition equipped = WorkshopCatalog.FindById("core_compact")!;
+        WorkshopPartDefinition selected = WorkshopCatalog.FindById("core_coolant")!;
+        var loadout = new Dictionary<MechPartSlot, WorkshopPartDefinition>
+        {
+            [MechPartSlot.Frame] = WorkshopCatalog.FindById("frame_starter")!,
+            [MechPartSlot.Mobility] = WorkshopCatalog.FindById("mobility_walker")!,
+            [MechPartSlot.Core] = equipped
+        };
+
+        Assert.False(MechBuildRules.CanRemoveSelectedOptionalPart(loadout, selected));
+    }
+
+    [Fact]
+    public void CanRemoveSelectedOptionalPart_ReturnsFalse_ForRequiredSlots()
+    {
+        WorkshopPartDefinition selected = WorkshopCatalog.FindById("frame_starter")!;
+        var loadout = new Dictionary<MechPartSlot, WorkshopPartDefinition>
+        {
+            [MechPartSlot.Frame] = selected,
+            [MechPartSlot.Mobility] = WorkshopCatalog.FindById("mobility_walker")!
+        };
+
+        Assert.False(MechBuildRules.CanRemoveSelectedOptionalPart(loadout, selected));
+    }
+
+    [Fact]
     public void CanEquip_ReturnsFalse_WhenLimitsAreNegative()
     {
         bool result = MechBuildRules.CanEquip(
