@@ -1,6 +1,6 @@
 # Project status and audit notes
 
-**Last updated:** 2026-10-31  
+**Last updated:** 2026-11-14  
 **Default branch:** \`main\`  
 **Validated feature branch:** \`feature/data-driven-workshop\`
 
@@ -39,14 +39,24 @@ All sample part names and balance values are project-authored prototype data. Th
 
 ## Latest remote verification
 
-The validated branch head \`fc351bf86d1547f9ec121614735bcf5873611782\` passed [GitHub Actions run 41227005160](https://github.com/Adeeb-muhammad/Super-Mech-/actions/runs/41227005160):
+The hardening branch head `43b19760f3a0b5be0eb1252793aa5178eaa160f6` passed [GitHub Actions run 43581827046](https://github.com/Adeeb-muhammad/Super-Mech-/actions/runs/43581827046) on 2026-11-14:
 
 - Godot 4.6 .NET resource import: passed.
-- C# build before and after import: passed, each with **0 warnings and 0 errors**.
-- Automated tests: **24/24 passed**, with **0 warnings and 0 errors**.
+- C# build before and after import: passed.
+- Automated tests: **52/52 passed**.
 - Default workshop scene headless launch: passed.
 
-This verifies import, desktop compilation, the tested domain and file-persistence logic, and scene startup. It does not replace interactive visual QA or mobile aspect-ratio testing.
+This verifies resource import, desktop compilation, the pure workshop/combat rules and file-persistence tests, and scene startup. It does not replace interactive visual QA or mobile aspect-ratio testing.
+
+## Workshop and combat hardening (2026-11-14)
+
+- Compact layout margins and offline-badge visibility now update when resizing within the compact breakpoint.
+- Optional-part removal is allowed only when the selected part is the exact optional component currently equipped in that slot.
+- Workshop part validation rejects malformed preview-colour hex strings before drawing.
+- The separate legacy combat prototype now validates ability costs, ranges, and multipliers before consuming energy; uses overflow-safe distance/damage calculations; enforces adjacent-cell movement; validates turn state and scene references; and regenerates both combatants' energy within their maxima.
+- Combat HUDs can request the current status after connecting, avoiding a stale initial display when the TurnManager initialized first.
+
+The combat prototype remains separate from the default workshop scene and is not presented as a complete game mode.
 
 ## Known limitations and next priorities
 
