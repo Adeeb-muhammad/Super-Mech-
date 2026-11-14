@@ -15,4 +15,9 @@ public static class WorkshopLayoutRules
     {
         return viewportWidth < 600.0f ? 10 : 16;
     }
+
+    public static bool ShowOfflineBadge(float viewportWidth)
+    {
+        return viewportWidth >= 600.0f;
+    }
 }
