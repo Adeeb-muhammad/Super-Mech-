@@ -1,4 +1,5 @@
 using System;
+using System;
 using System.Collections.Generic;
 
 /// <summary>
@@ -59,6 +60,21 @@ public static class MechBuildRules
             Cooling = ClampToInt(cooling),
             Armor = ClampToInt(armor)
         };
+    }
+
+    public static bool CanRemoveSelectedOptionalPart(
+        IReadOnlyDictionary<MechPartSlot, WorkshopPartDefinition> loadout,
+        WorkshopPartDefinition selectedPart)
+    {
+        if (loadout == null || selectedPart == null || !selectedPart.HasValidData())
+            return false;
+
+        if (selectedPart.Slot == MechPartSlot.Frame || selectedPart.Slot == MechPartSlot.Mobility)
+            return false;
+
+        return loadout.TryGetValue(selectedPart.Slot, out WorkshopPartDefinition equippedPart) &&
+               equippedPart != null &&
+               string.Equals(equippedPart.Id, selectedPart.Id, StringComparison.Ordinal);
     }
 
     public static bool TryValidateWorkshopLoadout(
