@@ -209,6 +209,15 @@ public sealed class WorkshopLoadoutCodecTests
     }
 
     [Fact]
+    public void LayoutRules_UpdateOfflineBadgeVisibilityAcrossCompactWidths()
+    {
+        Assert.False(WorkshopLayoutRules.ShowOfflineBadge(390.0f));
+        Assert.False(WorkshopLayoutRules.ShowOfflineBadge(599.9f));
+        Assert.True(WorkshopLayoutRules.ShowOfflineBadge(600.0f));
+        Assert.True(WorkshopLayoutRules.ShowOfflineBadge(900.0f));
+    }
+
+    [Fact]
     public void LayoutRules_UseSmallerMarginsOnNarrowScreens()
     {
         Assert.Equal(10, WorkshopLayoutRules.HorizontalMargin(390.0f));
