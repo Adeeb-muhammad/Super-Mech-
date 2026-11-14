@@ -8,6 +8,16 @@ public sealed class CombatRulesTests
         Assert.Equal(4294967295L, CombatRules.Distance(int.MinValue, int.MaxValue));
     }
 
+    [Theory]
+    [InlineData(10, 30, 5, 15)]
+    [InlineData(29, 30, 5, 30)]
+    [InlineData(-10, 30, 5, 5)]
+    [InlineData(10, -30, 5, 5)]
+    public void RegenerateEnergy_ClampsToValidRange(int current, int maximum, int amount, int expected)
+    {
+        Assert.Equal(expected, CombatRules.RegenerateEnergy(current, maximum, amount));
+    }
+
     [Fact]
     public void IsValidAbility_AcceptsSensibleAbilityData()
     {
