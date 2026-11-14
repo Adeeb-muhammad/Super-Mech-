@@ -268,8 +268,17 @@ public partial class WorkshopScreen : Control
     {
         float viewportWidth = GetViewportRect().Size.X;
         bool useCompactLayout = WorkshopLayoutRules.UseCompactLayout(viewportWidth);
-        if (_wideBody == null || _compactBody == null || useCompactLayout == _isCompactLayout)
+        if (_wideBody == null || _compactBody == null)
             return;
+
+        // Viewport settings can change while the compact layout remains active
+        // (for example, resizing from a phone width to a small tablet width).
+        if (useCompactLayout == _isCompactLayout)
+        {
+            if (_isCompactLayout)
+                ApplyCompactViewportSettings(viewportWidth);
+            return;
+        }
 
         _isCompactLayout = useCompactLayout;
 
@@ -289,12 +298,7 @@ public partial class WorkshopScreen : Control
             _preview.CustomMinimumSize = new Vector2(0, 280);
             _wideBody.Visible = false;
             _compactScroll.Visible = true;
-            int compactMargin = WorkshopLayoutRules.HorizontalMargin(viewportWidth);
-            _pageMargin.AddThemeConstantOverride("margin_left", compactMargin);
-            _pageMargin.AddThemeConstantOverride("margin_right", compactMargin);
-            _pageMargin.AddThemeConstantOverride("margin_top", 10);
-            _pageMargin.AddThemeConstantOverride("margin_bottom", 10);
-            _offlineBadge.Visible = viewportWidth >= 600;
+            ApplyCompactViewportSettings(viewportWidth);
         }
         else
         {
@@ -321,6 +325,16 @@ public partial class WorkshopScreen : Control
             _pageMargin.AddThemeConstantOverride("margin_bottom", 18);
             _offlineBadge.Visible = true;
         }
+    }
+
+    private void ApplyCompactViewportSettings(float viewportWidth)
+    {
+        int compactMargin = WorkshopLayoutRules.HorizontalMargin(viewportWidth);
+        _pageMargin.AddThemeConstantOverride("margin_left", compactMargin);
+        _pageMargin.AddThemeConstantOverride("margin_right", compactMargin);
+        _pageMargin.AddThemeConstantOverride("margin_top", 10);
+        _pageMargin.AddThemeConstantOverride("margin_bottom", 10);
+        _offlineBadge.Visible = WorkshopLayoutRules.ShowOfflineBadge(viewportWidth);
     }
 
     private static void MovePanel(PanelContainer panel, Container target)
@@ -443,18 +457,14 @@ public partial class WorkshopScreen : Control
 
     private void RemoveOptionalPart()
     {
-        if (_selectedPart == null ||
-            _selectedPart.Slot == MechPartSlot.Frame ||
-            _selectedPart.Slot == MechPartSlot.Mobility)
+        if (!MechBuildRules.CanRemoveSelectedOptionalPart(_loadout, _selectedPart))
         {
-            _status.Text = "Frame and mobility components are required.";
+            _status.Text = "Select the equipped optional component to remove.";
             return;
         }
 
-        if (_loadout.Remove(_selectedPart.Slot))
-            PersistAndRefresh("Optional component removed.");
-        else
-            _status.Text = "That slot is already empty.";
+        _loadout.Remove(_selectedPart.Slot);
+        PersistAndRefresh("Optional component removed.");
     }
 
     private void ResetBuild()
@@ -524,10 +534,7 @@ public partial class WorkshopScreen : Control
         _loadoutSummary.Text =
             $"FRAME  {GetEquippedName(MechPartSlot.Frame)}     MOBILITY  {GetEquippedName(MechPartSlot.Mobility)}\n" +
             $"CORE  {GetEquippedName(MechPartSlot.Core)}     UTILITY  {GetEquippedName(MechPartSlot.Utility)}";
-        _removeButton.Disabled = _selectedPart == null ||
-                                 _selectedPart.Slot == MechPartSlot.Frame ||
-                                 _selectedPart.Slot == MechPartSlot.Mobility ||
-                                 !_loadout.ContainsKey(_selectedPart.Slot);
+        _removeButton.Disabled = !MechBuildRules.CanRemoveSelectedOptionalPart(_loadout, _selectedPart);
     }
 
     private string GetEquippedName(MechPartSlot slot)

@@ -19,6 +19,7 @@
        Godot's SDK, editor source generators, or a running engine. -->
   <ItemGroup>
     <Compile Include="../Scripts/Mech/MechBuildRules.cs" Link="MechBuildRules.cs" />
+    <Compile Include="../Scripts/Combat/CombatRules.cs" Link="CombatRules.cs" />
     <Compile Include="../Scripts/Mech/Workshop/WorkshopPartDefinition.cs" Link="WorkshopPartDefinition.cs" />
     <Compile Include="../Scripts/Mech/Workshop/WorkshopCatalog.cs" Link="WorkshopCatalog.cs" />
     <Compile Include="../Scripts/Mech/Workshop/WorkshopLoadoutData.cs" Link="WorkshopLoadoutData.cs" />

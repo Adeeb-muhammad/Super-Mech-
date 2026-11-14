@@ -50,6 +50,10 @@ public partial class CombatUI : Control
 		{
 			AttackButton.Pressed += OnAttackButtonPressed;
 		}
+
+		// TurnManager may have emitted its initial signals before this UI connected.
+		TurnManager.EmitCurrentStatus();
+		UpdateTurnIndicator();
 	}
 
 	/// <summary>
@@ -126,17 +130,29 @@ public partial class CombatUI : Control
 	/// </summary>
 	private void UpdateTurnIndicator()
 	{
-		bool playerTurn = TurnManager.IsPlayerInputAllowed;
-
-		if (TurnIndicator != null)
+		if (TurnManager.IsCombatOver)
 		{
-			TurnIndicator.Text = playerTurn ? "YOUR TURN" : "ENEMY TURN";
+			string result = TurnManager.PlayerWon == true
+				? "YOU WIN!"
+				: TurnManager.PlayerWon == false ? "GAME OVER" : "COMBAT UNAVAILABLE";
+
+			if (TurnIndicator != null)
+				TurnIndicator.Text = result;
+
+			if (AttackButton != null)
+			{
+				AttackButton.Disabled = true;
+				AttackButton.Text = result;
+			}
+			return;
 		}
+
+		bool playerTurn = TurnManager.IsPlayerInputAllowed;
+		if (TurnIndicator != null)
+			TurnIndicator.Text = playerTurn ? "YOUR TURN" : "ENEMY TURN";
 
 		if (AttackButton != null)
-		{
 			AttackButton.Disabled = !playerTurn;
-		}
 	}
 
 	public override void _ExitTree()

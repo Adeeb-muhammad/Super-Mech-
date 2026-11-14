@@ -85,6 +85,41 @@ public sealed class WorkshopLoadoutCodecTests
         }
     }
 
+    [Theory]
+    [InlineData("")]
+    [InlineData("blue")]
+    [InlineData("#12GG89")]
+    [InlineData("#12345")]
+    [InlineData("#123456789")]
+    public void PartValidation_RejectsInvalidPreviewColors(string color)
+    {
+        var part = new WorkshopPartDefinition
+        {
+            Id = "test_part",
+            DisplayName = "Test Part",
+            Slot = MechPartSlot.Core,
+            PreviewColor = color
+        };
+
+        Assert.False(part.HasValidData());
+    }
+
+    [Theory]
+    [InlineData("#123456")]
+    [InlineData("#12345678")]
+    public void PartValidation_AcceptsHexPreviewColors(string color)
+    {
+        var part = new WorkshopPartDefinition
+        {
+            Id = "test_part",
+            DisplayName = "Test Part",
+            Slot = MechPartSlot.Core,
+            PreviewColor = color
+        };
+
+        Assert.True(part.HasValidData());
+    }
+
     [Fact]
     public void WorkshopStats_AggregateEquippedParts()
     {
@@ -206,6 +241,15 @@ public sealed class WorkshopLoadoutCodecTests
         Assert.True(WorkshopLayoutRules.UseCompactLayout(1023.9f));
         Assert.False(WorkshopLayoutRules.UseCompactLayout(1024.0f));
         Assert.False(WorkshopLayoutRules.UseCompactLayout(1280.0f));
+    }
+
+    [Fact]
+    public void LayoutRules_UpdateOfflineBadgeVisibilityAcrossCompactWidths()
+    {
+        Assert.False(WorkshopLayoutRules.ShowOfflineBadge(390.0f));
+        Assert.False(WorkshopLayoutRules.ShowOfflineBadge(599.9f));
+        Assert.True(WorkshopLayoutRules.ShowOfflineBadge(600.0f));
+        Assert.True(WorkshopLayoutRules.ShowOfflineBadge(900.0f));
     }
 
     [Fact]

@@ -23,7 +23,7 @@ public partial class TurnManager : Node
 	private EnemyCombatant _enemy;
 	private AIController _aiController;
 	private CombatManager _combatManager;
-	private CombatState _currentState;
+	private CombatState _currentState = CombatState.GameOver;
 
 	/// <summary>
 	/// Emitted when a combatant takes damage. Useful for updating UI.
@@ -55,15 +55,37 @@ public partial class TurnManager : Node
 
 	public override void _Ready()
 	{
-		_player = GetNode<MechCombatant>(PlayerPath);
-		_enemy = GetNode<EnemyCombatant>(EnemyPath);
+		if (PlayerPath == null || PlayerPath.IsEmpty ||
+			EnemyPath == null || EnemyPath.IsEmpty)
+		{
+			GD.PushError("TurnManager: PlayerPath and EnemyPath must both be assigned.");
+			_currentState = CombatState.GameOver;
+			return;
+		}
+
+		_player = GetNodeOrNull<MechCombatant>(PlayerPath);
+		_enemy = GetNodeOrNull<EnemyCombatant>(EnemyPath);
+		if (_player == null || _enemy == null)
+		{
+			GD.PushError("TurnManager: PlayerPath must point to MechCombatant and EnemyPath to EnemyCombatant.");
+			_currentState = CombatState.GameOver;
+			return;
+		}
+
 		if (AIControllerPath != null && !AIControllerPath.IsEmpty)
 			_aiController = GetNodeOrNull<AIController>(AIControllerPath);
 		_combatManager = new CombatManager();
 
 		_player.InitializeForCombat();
+		_enemy.MaxHP = Math.Max(0, _enemy.MaxHP);
+		_enemy.CurrentHP = Math.Clamp(_enemy.CurrentHP, 0, _enemy.MaxHP);
+		_enemy.MaxEnergy = Math.Max(0, _enemy.MaxEnergy);
+		_enemy.CurrentEnergy = Math.Clamp(_enemy.CurrentEnergy, 0, _enemy.MaxEnergy);
 
 		_currentState = CombatState.PlayerTurn;
+		if (CheckVictoryCondition())
+			return;
+
 		EmitSignal(SignalName.CombatLogUpdated, "Combat started — your turn!");
 		EmitSignal(SignalName.HPUpdated, _player.CurrentHP, _player.MaxHP, _enemy.CurrentHP, _enemy.MaxHP);
 		EmitSignal(SignalName.EnergyUpdated, _player.CurrentEnergy, _player.MaxEnergy);
@@ -74,6 +96,21 @@ public partial class TurnManager : Node
 	/// </summary>
 	public bool IsPlayerInputAllowed => _currentState == CombatState.PlayerTurn;
 
+	public bool IsCombatOver => _currentState == CombatState.GameOver;
+
+	public bool? PlayerWon { get; private set; }
+
+	public void EmitCurrentStatus()
+	{
+		if (_player == null || _enemy == null ||
+			!GodotObject.IsInstanceValid(_player) ||
+			!GodotObject.IsInstanceValid(_enemy))
+			return;
+
+		EmitSignal(SignalName.HPUpdated, _player.CurrentHP, _player.MaxHP, _enemy.CurrentHP, _enemy.MaxHP);
+		EmitSignal(SignalName.EnergyUpdated, _player.CurrentEnergy, _player.MaxEnergy);
+	}
+
 	/// <summary>
 	/// Call this from your UI button or input handler when the player chooses to attack.
 	/// Does nothing if it is not the player's turn.
@@ -83,6 +120,15 @@ public partial class TurnManager : Node
 		if (_currentState != CombatState.PlayerTurn)
 		{
 			GD.Print("Input blocked — it is the enemy's turn.");
+			return;
+		}
+
+		var playerPosComp = _player.GetNodeOrNull<PositionComponent>("PositionComponent");
+		var enemyPosComp = _enemy.GetNodeOrNull<PositionComponent>("PositionComponent");
+		if (playerPosComp != null && enemyPosComp != null &&
+			CombatRules.Distance(playerPosComp.Position, enemyPosComp.Position) > CombatConstants.DefaultAttackRange)
+		{
+			EmitSignal(SignalName.CombatLogUpdated, "Target out of range!");
 			return;
 		}
 
@@ -119,13 +165,23 @@ public partial class TurnManager : Node
 			return false;
 		}
 
+		if (!CombatRules.IsValidAbility(
+			ability.EnergyCost,
+			ability.DamageMultiplier,
+			ability.MinRange,
+			ability.MaxRange))
+		{
+			EmitSignal(SignalName.CombatLogUpdated, "This ability has invalid configuration.");
+			return false;
+		}
+
 		// Verify distance between Attacker and Defender
 		var playerPosComp = _player.GetNodeOrNull<PositionComponent>("PositionComponent");
 		var enemyPosComp = _enemy.GetNodeOrNull<PositionComponent>("PositionComponent");
 
 		if (playerPosComp != null && enemyPosComp != null)
 		{
-			int distance = Math.Abs(playerPosComp.Position - enemyPosComp.Position);
+			long distance = CombatRules.Distance(playerPosComp.Position, enemyPosComp.Position);
 			if (distance < ability.MinRange || distance > ability.MaxRange)
 			{
 				string rangeMsg = "Target out of range!";
@@ -176,33 +232,38 @@ public partial class TurnManager : Node
 			return;
 		}
 
-		int cost = CombatConstants.MoveEnergyCost;
-		if (_player.CurrentEnergy < cost)
+		var playerPosComp = _player.GetNodeOrNull<PositionComponent>("PositionComponent");
+		if (playerPosComp == null)
 		{
-			string failMsg = $"Not enough energy to move! (Need {cost}, have {_player.CurrentEnergy})";
-			GD.Print(failMsg);
-			EmitSignal(SignalName.CombatLogUpdated, failMsg);
+			EmitSignal(SignalName.CombatLogUpdated, "Movement is unavailable: the player has no PositionComponent.");
+			return;
+		}
+
+		if (targetPosition == playerPosComp.Position ||
+			CombatRules.Distance(playerPosComp.Position, targetPosition) > CombatConstants.MoveRange)
+		{
+			EmitSignal(SignalName.CombatLogUpdated, "Choose an adjacent cell to move one space.");
 			return;
 		}
 
 		var enemyPosComp = _enemy.GetNodeOrNull<PositionComponent>("PositionComponent");
 		if (enemyPosComp != null && targetPosition == enemyPosComp.Position)
 		{
-			string failMsg = "Cell blocked!";
-			GD.Print(failMsg);
+			EmitSignal(SignalName.CombatLogUpdated, "Cell blocked!");
+			return;
+		}
+
+		int cost = CombatConstants.MoveEnergyCost;
+		if (_player.CurrentEnergy < cost)
+		{
+			string failMsg = $"Not enough energy to move! (Need {cost}, have {_player.CurrentEnergy})";
 			EmitSignal(SignalName.CombatLogUpdated, failMsg);
 			return;
 		}
 
-		var playerPosComp = _player.GetNodeOrNull<PositionComponent>("PositionComponent");
-		if (playerPosComp != null)
-		{
-			playerPosComp.Position = targetPosition;
-		}
-
+		playerPosComp.Position = targetPosition;
 		_player.CurrentEnergy -= cost;
 		EmitSignal(SignalName.EnergyUpdated, _player.CurrentEnergy, _player.MaxEnergy);
-		
 		EmitSignal(SignalName.CombatLogUpdated, $"Player moved to position {targetPosition}.");
 
 		StartEnemyTurn();
@@ -213,24 +274,39 @@ public partial class TurnManager : Node
 	/// </summary>
 	public void ExecuteEnemyMove(int targetPosition)
 	{
+		if (_currentState != CombatState.EnemyTurn)
+			return;
+
+		var enemyPosComp = _enemy.GetNodeOrNull<PositionComponent>("PositionComponent");
+		if (enemyPosComp == null)
+		{
+			EmitSignal(SignalName.CombatLogUpdated, "Enemy movement is unavailable; the enemy attacks instead.");
+			ExecuteEnemyAttack();
+			return;
+		}
+
+		var playerPosComp = _player.GetNodeOrNull<PositionComponent>("PositionComponent");
+		if (targetPosition == enemyPosComp.Position ||
+			CombatRules.Distance(enemyPosComp.Position, targetPosition) > CombatConstants.MoveRange ||
+			(playerPosComp != null && targetPosition == playerPosComp.Position))
+		{
+			EmitSignal(SignalName.CombatLogUpdated, "Enemy could not move to that cell; the enemy attacks instead.");
+			ExecuteEnemyAttack();
+			return;
+		}
+
 		int cost = CombatConstants.MoveEnergyCost;
 		if (_enemy.CurrentEnergy < cost)
 		{
-			EmitSignal(SignalName.CombatLogUpdated, "Enemy does not have enough energy to move, skipping turn.");
+			EmitSignal(SignalName.CombatLogUpdated, "Enemy does not have enough energy to move; turn skipped.");
 			StartPlayerTurn();
 			return;
 		}
 
-		var enemyPosComp = _enemy.GetNodeOrNull<PositionComponent>("PositionComponent");
-		if (enemyPosComp != null)
-		{
-			enemyPosComp.Position = targetPosition;
-		}
-		
+		enemyPosComp.Position = targetPosition;
 		_enemy.CurrentEnergy -= cost;
 		EmitSignal(SignalName.CombatLogUpdated, $"Enemy moved to position {targetPosition}.");
 
-		// Return control to the player
 		StartPlayerTurn();
 	}
 
@@ -240,7 +316,12 @@ public partial class TurnManager : Node
 	private async void StartEnemyTurn()
 	{
 		_currentState = CombatState.EnemyTurn;
-		EmitSignal(SignalName.CombatLogUpdated, "Enemy is preparing to act...");
+		_enemy.CurrentEnergy = CombatRules.RegenerateEnergy(
+			_enemy.CurrentEnergy,
+			_enemy.MaxEnergy,
+			CombatConstants.EnergyRegenAmount);
+		EmitSignal(SignalName.CombatLogUpdated,
+			$"Enemy is preparing to act... (Energy: {_enemy.CurrentEnergy}/{_enemy.MaxEnergy})");
 
 		// Wait before the enemy acts
 		await ToSignal(GetTree().CreateTimer(CombatConstants.TurnDelay), SceneTreeTimer.SignalName.Timeout);
@@ -248,14 +329,10 @@ public partial class TurnManager : Node
 		// Guard: if the node was freed during the wait (e.g., scene change), bail out
 		if (!IsInsideTree()) return;
 
-		if (_aiController != null)
-		{
+		if (_aiController != null && _aiController.IsConfiguredFor(this, _enemy, _player))
 			_aiController.DecideAction();
-		}
 		else
-		{
 			ExecuteEnemyAttack();
-		}
 	}
 
 	/// <summary>
@@ -263,6 +340,9 @@ public partial class TurnManager : Node
 	/// </summary>
 	public void ExecuteEnemyAttack()
 	{
+		if (_currentState != CombatState.EnemyTurn)
+			return;
+
 		int damage = _combatManager.CalculateDamage(_enemy, _player);
 		_player.CurrentHP -= damage;
 		_player.CurrentHP = Math.Max(0, _player.CurrentHP);
@@ -287,7 +367,10 @@ public partial class TurnManager : Node
 		
 		_currentState = CombatState.PlayerTurn;
 		
-		_player.CurrentEnergy = Math.Min(_player.MaxEnergy, _player.CurrentEnergy + CombatConstants.EnergyRegenAmount);
+		_player.CurrentEnergy = CombatRules.RegenerateEnergy(
+			_player.CurrentEnergy,
+			_player.MaxEnergy,
+			CombatConstants.EnergyRegenAmount);
 		EmitSignal(SignalName.EnergyUpdated, _player.CurrentEnergy, _player.MaxEnergy);
 		
 		EmitSignal(SignalName.CombatLogUpdated, $"Your turn! (+{CombatConstants.EnergyRegenAmount} Energy)");
@@ -316,6 +399,7 @@ public partial class TurnManager : Node
 	/// </summary>
 	private void EndCombat(bool playerWon)
 	{
+		PlayerWon = playerWon;
 		string result = playerWon ? "Victory! The enemy has been destroyed." : "Defeat... your mech has been destroyed.";
 		GD.Print(result);
 		EmitSignal(SignalName.CombatLogUpdated, result);

@@ -61,6 +61,24 @@ public static class MechBuildRules
         };
     }
 
+    public static bool CanRemoveSelectedOptionalPart(
+        IReadOnlyDictionary<MechPartSlot, WorkshopPartDefinition> loadout,
+        WorkshopPartDefinition selectedPart)
+    {
+        if (loadout == null || selectedPart == null || !selectedPart.HasValidData())
+            return false;
+
+        if (selectedPart.Slot == MechPartSlot.Frame || selectedPart.Slot == MechPartSlot.Mobility)
+            return false;
+
+        if (!loadout.ContainsKey(selectedPart.Slot))
+            return false;
+
+        WorkshopPartDefinition equippedPart = loadout[selectedPart.Slot];
+        return equippedPart != null &&
+               string.Equals(equippedPart.Id, selectedPart.Id, StringComparison.Ordinal);
+    }
+
     public static bool TryValidateWorkshopLoadout(
         IReadOnlyDictionary<MechPartSlot, WorkshopPartDefinition> loadout,
         int maxWeight,

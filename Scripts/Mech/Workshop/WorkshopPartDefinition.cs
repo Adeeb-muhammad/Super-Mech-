@@ -31,12 +31,29 @@ public sealed class WorkshopPartDefinition
         return !string.IsNullOrWhiteSpace(Id) &&
                !string.IsNullOrWhiteSpace(DisplayName) &&
                Enum.IsDefined(typeof(MechPartSlot), Slot) &&
+               HasValidPreviewColor() &&
                Health >= 0 &&
                Weight >= 0 &&
                BuildCost >= 0 &&
                EnergyCapacity >= 0 &&
                Cooling >= 0 &&
                Armor >= 0;
+    }
+
+    private bool HasValidPreviewColor()
+    {
+        if (string.IsNullOrWhiteSpace(PreviewColor) ||
+            PreviewColor[0] != '#' ||
+            (PreviewColor.Length != 7 && PreviewColor.Length != 9))
+            return false;
+
+        for (int index = 1; index < PreviewColor.Length; index++)
+        {
+            if (!Uri.IsHexDigit(PreviewColor[index]))
+                return false;
+        }
+
+        return true;
     }
 }
 
