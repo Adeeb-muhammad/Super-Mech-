@@ -301,11 +301,10 @@ public partial class TurnManager : Node
 	private async void StartEnemyTurn()
 	{
 		_currentState = CombatState.EnemyTurn;
-		long regeneratedEnemyEnergy = (long)_enemy.CurrentEnergy + CombatConstants.EnergyRegenAmount;
-		_enemy.CurrentEnergy = (int)Math.Clamp(
-			regeneratedEnemyEnergy,
-			0L,
-			(long)Math.Max(0, _enemy.MaxEnergy));
+		_enemy.CurrentEnergy = CombatRules.RegenerateEnergy(
+			_enemy.CurrentEnergy,
+			_enemy.MaxEnergy,
+			CombatConstants.EnergyRegenAmount);
 		EmitSignal(SignalName.CombatLogUpdated,
 			$"Enemy is preparing to act... (Energy: {_enemy.CurrentEnergy}/{_enemy.MaxEnergy})");
 
@@ -353,8 +352,10 @@ public partial class TurnManager : Node
 		
 		_currentState = CombatState.PlayerTurn;
 		
-		long regeneratedEnergy = (long)_player.CurrentEnergy + CombatConstants.EnergyRegenAmount;
-		_player.CurrentEnergy = (int)Math.Clamp(regeneratedEnergy, 0L, (long)Math.Max(0, _player.MaxEnergy));
+		_player.CurrentEnergy = CombatRules.RegenerateEnergy(
+			_player.CurrentEnergy,
+			_player.MaxEnergy,
+			CombatConstants.EnergyRegenAmount);
 		EmitSignal(SignalName.EnergyUpdated, _player.CurrentEnergy, _player.MaxEnergy);
 		
 		EmitSignal(SignalName.CombatLogUpdated, $"Your turn! (+{CombatConstants.EnergyRegenAmount} Energy)");
