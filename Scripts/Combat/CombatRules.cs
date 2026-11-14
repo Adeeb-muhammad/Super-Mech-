@@ -11,6 +11,13 @@ public static class CombatRules
         return Math.Abs((long)firstPosition - secondPosition);
     }
 
+    public static int RegenerateEnergy(int currentEnergy, int maxEnergy, int regenerationAmount)
+    {
+        long maximum = Math.Max(0, maxEnergy);
+        long regenerated = (long)currentEnergy + Math.Max(0, regenerationAmount);
+        return (int)Math.Clamp(regenerated, 0L, maximum);
+    }
+
     public static bool IsValidAbility(int energyCost, float damageMultiplier, int minRange, int maxRange)
     {
         return energyCost >= 0 &&
