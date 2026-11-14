@@ -22,6 +22,12 @@ The older \`player_mech.tscn\` scene remains available separately. \`MechPart\`,
 
 Build-budget cost and in-game energy capacity are separate values and must not be conflated.
 
+## Combat prototype
+
+The legacy combat scripts remain a separate prototype and are not connected to the default workshop scene. CombatManager delegates pure distance/damage calculations to CombatRules; TurnManager owns turn state, action validation, resource changes, and win/loss transitions; AIController chooses the enemy action; CombatUI subscribes to TurnManager signals and requests a current snapshot after connecting.
+
+CombatRules is engine-independent and covers safe integer distance/damage arithmetic, ability configuration checks, and bounded energy regeneration. Keep this layer pure so it can be tested without loading Godot.
+
 ## Testing boundary
 
 The xUnit project links pure workshop-domain, JSON codec, and file-store sources without loading Godot. The remote Godot CI workflow validates resource import, C# compilation, and headless startup of the configured workshop scene. Interactive UI behavior and visual layout still need hands-on QA and dedicated UI automation.
