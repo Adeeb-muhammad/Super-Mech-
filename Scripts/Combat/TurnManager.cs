@@ -23,7 +23,7 @@ public partial class TurnManager : Node
 	private EnemyCombatant _enemy;
 	private AIController _aiController;
 	private CombatManager _combatManager;
-	private CombatState _currentState;
+	private CombatState _currentState = CombatState.GameOver;
 
 	/// <summary>
 	/// Emitted when a combatant takes damage. Useful for updating UI.
@@ -95,6 +95,21 @@ public partial class TurnManager : Node
 	/// Returns true if it is currently the player's turn and input is allowed.
 	/// </summary>
 	public bool IsPlayerInputAllowed => _currentState == CombatState.PlayerTurn;
+
+	public bool IsCombatOver => _currentState == CombatState.GameOver;
+
+	public bool? PlayerWon { get; private set; }
+
+	public void EmitCurrentStatus()
+	{
+		if (_player == null || _enemy == null ||
+			!GodotObject.IsInstanceValid(_player) ||
+			!GodotObject.IsInstanceValid(_enemy))
+			return;
+
+		EmitSignal(SignalName.HPUpdated, _player.CurrentHP, _player.MaxHP, _enemy.CurrentHP, _enemy.MaxHP);
+		EmitSignal(SignalName.EnergyUpdated, _player.CurrentEnergy, _player.MaxEnergy);
+	}
 
 	/// <summary>
 	/// Call this from your UI button or input handler when the player chooses to attack.
@@ -384,6 +399,7 @@ public partial class TurnManager : Node
 	/// </summary>
 	private void EndCombat(bool playerWon)
 	{
+		PlayerWon = playerWon;
 		string result = playerWon ? "Victory! The enemy has been destroyed." : "Defeat... your mech has been destroyed.";
 		GD.Print(result);
 		EmitSignal(SignalName.CombatLogUpdated, result);
