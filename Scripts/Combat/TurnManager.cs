@@ -55,15 +55,37 @@ public partial class TurnManager : Node
 
 	public override void _Ready()
 	{
-		_player = GetNode<MechCombatant>(PlayerPath);
-		_enemy = GetNode<EnemyCombatant>(EnemyPath);
+		if (PlayerPath == null || PlayerPath.IsEmpty ||
+			EnemyPath == null || EnemyPath.IsEmpty)
+		{
+			GD.PushError("TurnManager: PlayerPath and EnemyPath must both be assigned.");
+			_currentState = CombatState.GameOver;
+			return;
+		}
+
+		_player = GetNodeOrNull<MechCombatant>(PlayerPath);
+		_enemy = GetNodeOrNull<EnemyCombatant>(EnemyPath);
+		if (_player == null || _enemy == null)
+		{
+			GD.PushError("TurnManager: PlayerPath must point to MechCombatant and EnemyPath to EnemyCombatant.");
+			_currentState = CombatState.GameOver;
+			return;
+		}
+
 		if (AIControllerPath != null && !AIControllerPath.IsEmpty)
 			_aiController = GetNodeOrNull<AIController>(AIControllerPath);
 		_combatManager = new CombatManager();
 
 		_player.InitializeForCombat();
+		_enemy.MaxHP = Math.Max(0, _enemy.MaxHP);
+		_enemy.CurrentHP = Math.Clamp(_enemy.CurrentHP, 0, _enemy.MaxHP);
+		_enemy.MaxEnergy = Math.Max(0, _enemy.MaxEnergy);
+		_enemy.CurrentEnergy = Math.Clamp(_enemy.CurrentEnergy, 0, _enemy.MaxEnergy);
 
 		_currentState = CombatState.PlayerTurn;
+		if (CheckVictoryCondition())
+			return;
+
 		EmitSignal(SignalName.CombatLogUpdated, "Combat started — your turn!");
 		EmitSignal(SignalName.HPUpdated, _player.CurrentHP, _player.MaxHP, _enemy.CurrentHP, _enemy.MaxHP);
 		EmitSignal(SignalName.EnergyUpdated, _player.CurrentEnergy, _player.MaxEnergy);
@@ -119,13 +141,23 @@ public partial class TurnManager : Node
 			return false;
 		}
 
+		if (!CombatRules.IsValidAbility(
+			ability.EnergyCost,
+			ability.DamageMultiplier,
+			ability.MinRange,
+			ability.MaxRange))
+		{
+			EmitSignal(SignalName.CombatLogUpdated, "This ability has invalid configuration.");
+			return false;
+		}
+
 		// Verify distance between Attacker and Defender
 		var playerPosComp = _player.GetNodeOrNull<PositionComponent>("PositionComponent");
 		var enemyPosComp = _enemy.GetNodeOrNull<PositionComponent>("PositionComponent");
 
 		if (playerPosComp != null && enemyPosComp != null)
 		{
-			int distance = Math.Abs(playerPosComp.Position - enemyPosComp.Position);
+			long distance = CombatRules.Distance(playerPosComp.Position, enemyPosComp.Position);
 			if (distance < ability.MinRange || distance > ability.MaxRange)
 			{
 				string rangeMsg = "Target out of range!";
@@ -248,14 +280,10 @@ public partial class TurnManager : Node
 		// Guard: if the node was freed during the wait (e.g., scene change), bail out
 		if (!IsInsideTree()) return;
 
-		if (_aiController != null)
-		{
+		if (_aiController != null && _aiController.IsConfiguredFor(this, _enemy, _player))
 			_aiController.DecideAction();
-		}
 		else
-		{
 			ExecuteEnemyAttack();
-		}
 	}
 
 	/// <summary>
@@ -263,6 +291,9 @@ public partial class TurnManager : Node
 	/// </summary>
 	public void ExecuteEnemyAttack()
 	{
+		if (_currentState != CombatState.EnemyTurn)
+			return;
+
 		int damage = _combatManager.CalculateDamage(_enemy, _player);
 		_player.CurrentHP -= damage;
 		_player.CurrentHP = Math.Max(0, _player.CurrentHP);
@@ -287,7 +318,8 @@ public partial class TurnManager : Node
 		
 		_currentState = CombatState.PlayerTurn;
 		
-		_player.CurrentEnergy = Math.Min(_player.MaxEnergy, _player.CurrentEnergy + CombatConstants.EnergyRegenAmount);
+		long regeneratedEnergy = (long)_player.CurrentEnergy + CombatConstants.EnergyRegenAmount;
+		_player.CurrentEnergy = (int)Math.Clamp(regeneratedEnergy, 0L, (long)Math.Max(0, _player.MaxEnergy));
 		EmitSignal(SignalName.EnergyUpdated, _player.CurrentEnergy, _player.MaxEnergy);
 		
 		EmitSignal(SignalName.CombatLogUpdated, $"Your turn! (+{CombatConstants.EnergyRegenAmount} Energy)");
