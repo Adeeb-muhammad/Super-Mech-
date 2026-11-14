@@ -208,33 +208,38 @@ public partial class TurnManager : Node
 			return;
 		}
 
-		int cost = CombatConstants.MoveEnergyCost;
-		if (_player.CurrentEnergy < cost)
+		var playerPosComp = _player.GetNodeOrNull<PositionComponent>("PositionComponent");
+		if (playerPosComp == null)
 		{
-			string failMsg = $"Not enough energy to move! (Need {cost}, have {_player.CurrentEnergy})";
-			GD.Print(failMsg);
-			EmitSignal(SignalName.CombatLogUpdated, failMsg);
+			EmitSignal(SignalName.CombatLogUpdated, "Movement is unavailable: the player has no PositionComponent.");
+			return;
+		}
+
+		if (targetPosition == playerPosComp.Position ||
+			CombatRules.Distance(playerPosComp.Position, targetPosition) > CombatConstants.MoveRange)
+		{
+			EmitSignal(SignalName.CombatLogUpdated, "Choose an adjacent cell to move one space.");
 			return;
 		}
 
 		var enemyPosComp = _enemy.GetNodeOrNull<PositionComponent>("PositionComponent");
 		if (enemyPosComp != null && targetPosition == enemyPosComp.Position)
 		{
-			string failMsg = "Cell blocked!";
-			GD.Print(failMsg);
+			EmitSignal(SignalName.CombatLogUpdated, "Cell blocked!");
+			return;
+		}
+
+		int cost = CombatConstants.MoveEnergyCost;
+		if (_player.CurrentEnergy < cost)
+		{
+			string failMsg = $"Not enough energy to move! (Need {cost}, have {_player.CurrentEnergy})";
 			EmitSignal(SignalName.CombatLogUpdated, failMsg);
 			return;
 		}
 
-		var playerPosComp = _player.GetNodeOrNull<PositionComponent>("PositionComponent");
-		if (playerPosComp != null)
-		{
-			playerPosComp.Position = targetPosition;
-		}
-
+		playerPosComp.Position = targetPosition;
 		_player.CurrentEnergy -= cost;
 		EmitSignal(SignalName.EnergyUpdated, _player.CurrentEnergy, _player.MaxEnergy);
-		
 		EmitSignal(SignalName.CombatLogUpdated, $"Player moved to position {targetPosition}.");
 
 		StartEnemyTurn();
@@ -245,24 +250,39 @@ public partial class TurnManager : Node
 	/// </summary>
 	public void ExecuteEnemyMove(int targetPosition)
 	{
+		if (_currentState != CombatState.EnemyTurn)
+			return;
+
+		var enemyPosComp = _enemy.GetNodeOrNull<PositionComponent>("PositionComponent");
+		if (enemyPosComp == null)
+		{
+			EmitSignal(SignalName.CombatLogUpdated, "Enemy movement is unavailable; the enemy attacks instead.");
+			ExecuteEnemyAttack();
+			return;
+		}
+
+		var playerPosComp = _player.GetNodeOrNull<PositionComponent>("PositionComponent");
+		if (targetPosition == enemyPosComp.Position ||
+			CombatRules.Distance(enemyPosComp.Position, targetPosition) > CombatConstants.MoveRange ||
+			(playerPosComp != null && targetPosition == playerPosComp.Position))
+		{
+			EmitSignal(SignalName.CombatLogUpdated, "Enemy could not move to that cell; the enemy attacks instead.");
+			ExecuteEnemyAttack();
+			return;
+		}
+
 		int cost = CombatConstants.MoveEnergyCost;
 		if (_enemy.CurrentEnergy < cost)
 		{
-			EmitSignal(SignalName.CombatLogUpdated, "Enemy does not have enough energy to move, skipping turn.");
+			EmitSignal(SignalName.CombatLogUpdated, "Enemy does not have enough energy to move; turn skipped.");
 			StartPlayerTurn();
 			return;
 		}
 
-		var enemyPosComp = _enemy.GetNodeOrNull<PositionComponent>("PositionComponent");
-		if (enemyPosComp != null)
-		{
-			enemyPosComp.Position = targetPosition;
-		}
-		
+		enemyPosComp.Position = targetPosition;
 		_enemy.CurrentEnergy -= cost;
 		EmitSignal(SignalName.CombatLogUpdated, $"Enemy moved to position {targetPosition}.");
 
-		// Return control to the player
 		StartPlayerTurn();
 	}
 
