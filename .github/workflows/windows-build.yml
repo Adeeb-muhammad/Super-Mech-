@@ -1,0 +1,68 @@
+name: Windows Desktop Build
+
+on:
+  push:
+    branches:
+      - build/windows-exe
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  windows-export:
+    name: Export Windows x64 build
+    runs-on: windows-latest
+    timeout-minutes: 30
+    env:
+      DOTNET_CLI_TELEMETRY_OPTOUT: "true"
+      DOTNET_NOLOGO: "true"
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install .NET 8 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Install Godot 4.6 .NET and export templates
+        uses: chickensoft-games/setup-godot@v2
+        with:
+          version: 4.6.0
+          use-dotnet: true
+          include-templates: true
+
+      - name: Restore and build C# project
+        run: |
+          dotnet restore "super mech.csproj"
+          dotnet build "super mech.csproj" --configuration Release --no-restore
+
+      - name: Import Godot resources
+        run: godot --headless --editor --path . --import --quit
+
+      - name: Rebuild after import
+        run: dotnet build "super mech.csproj" --configuration Release --no-restore
+
+      - name: Export Windows executable
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path dist | Out-Null
+          godot --headless --path . --export-release "Windows Desktop" "dist/SuperMech.exe"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          if (-not (Test-Path "dist/SuperMech.exe")) { throw "Windows export did not produce SuperMech.exe" }
+          Get-ChildItem dist
+
+      - name: Package Windows build
+        shell: pwsh
+        run: |
+          Compress-Archive -Path "dist/*" -DestinationPath "SuperMech-Windows-x64.zip" -Force
+
+      - name: Publish downloadable prerelease
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: windows-prototype-${{ github.run_number }}
+          name: Super Mech Windows Prototype Build ${{ github.run_number }}
+          prerelease: true
+          generate_release_notes: true
+          files: SuperMech-Windows-x64.zip
