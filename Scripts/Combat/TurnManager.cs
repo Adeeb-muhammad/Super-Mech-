@@ -108,6 +108,15 @@ public partial class TurnManager : Node
 			return;
 		}
 
+		var playerPosComp = _player.GetNodeOrNull<PositionComponent>("PositionComponent");
+		var enemyPosComp = _enemy.GetNodeOrNull<PositionComponent>("PositionComponent");
+		if (playerPosComp != null && enemyPosComp != null &&
+			CombatRules.Distance(playerPosComp.Position, enemyPosComp.Position) > CombatConstants.DefaultAttackRange)
+		{
+			EmitSignal(SignalName.CombatLogUpdated, "Target out of range!");
+			return;
+		}
+
 		int damage = _combatManager.CalculateDamage(_player, _enemy);
 		_enemy.CurrentHP -= damage;
 		_enemy.CurrentHP = Math.Max(0, _enemy.CurrentHP);
