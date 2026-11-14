@@ -301,7 +301,13 @@ public partial class TurnManager : Node
 	private async void StartEnemyTurn()
 	{
 		_currentState = CombatState.EnemyTurn;
-		EmitSignal(SignalName.CombatLogUpdated, "Enemy is preparing to act...");
+		long regeneratedEnemyEnergy = (long)_enemy.CurrentEnergy + CombatConstants.EnergyRegenAmount;
+		_enemy.CurrentEnergy = (int)Math.Clamp(
+			regeneratedEnemyEnergy,
+			0L,
+			(long)Math.Max(0, _enemy.MaxEnergy));
+		EmitSignal(SignalName.CombatLogUpdated,
+			$"Enemy is preparing to act... (Energy: {_enemy.CurrentEnergy}/{_enemy.MaxEnergy})");
 
 		// Wait before the enemy acts
 		await ToSignal(GetTree().CreateTimer(CombatConstants.TurnDelay), SceneTreeTimer.SignalName.Timeout);
