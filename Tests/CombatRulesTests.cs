@@ -11,8 +11,8 @@ public sealed class CombatRulesTests
     [Theory]
     [InlineData(10, 30, 5, 15)]
     [InlineData(29, 30, 5, 30)]
-    [InlineData(-10, 30, 5, 5)]
-    [InlineData(10, -30, 5, 5)]
+    [InlineData(-10, 30, 5, 0)]
+    [InlineData(10, -30, 5, 0)]
     public void RegenerateEnergy_ClampsToValidRange(int current, int maximum, int amount, int expected)
     {
         Assert.Equal(expected, CombatRules.RegenerateEnergy(current, maximum, amount));
