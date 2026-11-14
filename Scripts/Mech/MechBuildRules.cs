@@ -71,8 +71,11 @@ public static class MechBuildRules
         if (selectedPart.Slot == MechPartSlot.Frame || selectedPart.Slot == MechPartSlot.Mobility)
             return false;
 
-        return loadout.TryGetValue(selectedPart.Slot, out WorkshopPartDefinition equippedPart) &&
-               equippedPart != null &&
+        if (!loadout.ContainsKey(selectedPart.Slot))
+            return false;
+
+        WorkshopPartDefinition equippedPart = loadout[selectedPart.Slot];
+        return equippedPart != null &&
                string.Equals(equippedPart.Id, selectedPart.Id, StringComparison.Ordinal);
     }
 
